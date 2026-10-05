@@ -1,0 +1,17 @@
+pandas
+numpy
+scikit-learn
+xgboost
+shap
+streamlit
+matplotlib
+joblib
+python-dotenv
+
+# Pick one deep-learning framework:
+# tensorflow
+# torch
+
+# LLM SDK (pick one):
+# google-generativeai
+# groq

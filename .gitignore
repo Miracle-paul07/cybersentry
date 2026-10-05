@@ -1,0 +1,23 @@
+# Datasets are never committed
+data/*
+!data/raw/
+!data/processed/
+data/raw/*
+data/processed/*
+!.gitkeep
+
+# Models
+models/*.pkl
+
+# Secrets
+.env
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Local Claude Code settings
+.claude/settings.local.json
