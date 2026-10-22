@@ -7,6 +7,10 @@ streamlit
 matplotlib
 joblib
 python-dotenv
+torch
+groq
+python-dotenv
+jupyter
 
 # Pick one deep-learning framework:
 # tensorflow
