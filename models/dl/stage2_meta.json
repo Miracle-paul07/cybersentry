@@ -47,15 +47,13 @@
     "Infiltration",
     "PortScan",
     "SSH-Patator",
-    "Web Attack - Brute Force",
-    "Web Attack - Sql Injection",
-    "Web Attack - XSS"
+    "Web Attack"
   ],
   "preprocessing": "signed log1p, then models/dl/dl_scaler.joblib (fitted on train only)",
   "review_threshold": 0.7,
-  "val_macro_f1": 0.8212826034814449,
-  "test_macro_f1": 0.8130593919191698,
-  "test_accuracy": 0.9955998616758684,
-  "pipeline_test_macro_f1": 0.8643275192619945,
-  "pipeline_test_accuracy": 0.9987244081040114
+  "val_macro_f1": 0.910907106177747,
+  "test_macro_f1": 0.8981602501071607,
+  "test_accuracy": 0.9957906535815219,
+  "pipeline_test_macro_f1": 0.9532884117291706,
+  "pipeline_test_accuracy": 0.9988525010140689
 }
