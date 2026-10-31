@@ -4,6 +4,8 @@ scikit-learn
 xgboost
 shap
 streamlit
+plotly
+fpdf2
 matplotlib
 joblib
 python-dotenv

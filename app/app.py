@@ -1,16 +1,16 @@
 
-import re
-from pathlib import Path
-
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
 from backend import (
-    load_demo_results,
-    load_demo_flows,
+    generate_reports,
+    get_pipeline,
+    required_columns,
     run_analysis,
 )
+from report_export import report_to_pdf, report_to_txt
 
 # --------------------------------------------------
 # Page configuration
@@ -21,41 +21,58 @@ st.set_page_config(
     layout="wide",
 )
 
+# Hide Streamlit's own toolbar, Deploy button, main menu and footer
+st.html(
+    """
+    <style>
+    header[data-testid="stHeader"] {
+        background: transparent;
+    }
+    [data-testid="stToolbar"],
+    [data-testid="stAppDeployButton"],
+    [data-testid="stMainMenu"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    #MainMenu,
+    footer {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    </style>
+    """
+)
+
 st.title("🛡️ CyberSentry")
 st.caption("Detect. Understand. Respond.")
+
+PAGES = [
+    "Upload Network Data",
+    "Security Overview",
+    "Threat Detection",
+    "Threat Analysis",
+    "Incident Reports",
+]
+
+# Attack types rated Critical when detected with high confidence
+SEVERE_ATTACKS = {"DDOS", "INFILTRATION", "HEARTBLEED", "BOT"}
 
 # --------------------------------------------------
 # Helper functions
 # --------------------------------------------------
-def to_bool(value):
-    """Safely convert CSV boolean values to True or False."""
-    if pd.isna(value):
-        return False
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "1", "yes"}
-    return bool(value)
-
-
 def get_risk_level(row):
     """Derive a risk level from attack type, confidence and review status."""
     attack = str(row["attack_type"]).strip().upper()
     confidence = row["confidence"]
-    needs_review = to_bool(row["needs_review"])
 
     if attack == "BENIGN":
         return "Low"
-    if needs_review:
-        return "Critical"
+    if row["needs_review"]:
+        return "Medium"
     if pd.notna(confidence) and confidence >= 0.90:
-        return "Critical"
-    if pd.notna(confidence) and confidence >= 0.70:
+        if attack in SEVERE_ATTACKS or attack.startswith("DOS"):
+            return "Critical"
         return "High"
     return "Medium"
-
-
-def normalize_name(value):
-    """Normalize names for matching attack types and report filenames."""
-    return re.sub(r"[^a-z0-9]", "", str(value).lower())
 
 
 def show_risk_color(value):
@@ -69,81 +86,162 @@ def show_risk_color(value):
     return colors.get(value, "")
 
 
-# --------------------------------------------------
-# Load saved demo results through the backend
-# --------------------------------------------------
-try:
-    if "analysis_results" in st.session_state:
-        df = st.session_state["analysis_results"].copy()
-        results_source = "Latest demo analysis"
-    else:
-        df = load_demo_results()
-        results_source = "Saved demo results"
-
-    required_result_columns = [
-        "is_threat",
-        "needs_review",
-        "attack_type",
-        "confidence",
-        "stage1_score",
-    ]
-
-    missing_result_columns = [
-        column
-        for column in required_result_columns
-        if column not in df.columns
-    ]
-
-    if missing_result_columns:
-        st.error(
-            "Results are missing required columns: "
-            + ", ".join(missing_result_columns)
-        )
-        st.stop()
-
-    df["confidence"] = pd.to_numeric(
-        df["confidence"], errors="coerce"
-    )
-    df["stage1_score"] = pd.to_numeric(
-        df["stage1_score"], errors="coerce"
-    )
-    df["is_threat"] = df["is_threat"].apply(to_bool)
-    df["needs_review"] = df["needs_review"].apply(to_bool)
-    df["attack_type"] = df["attack_type"].fillna("Unknown").astype(str)
-
-    df["risk_level"] = df.apply(get_risk_level, axis=1)
-
-except Exception as error:
-    st.error(f"Could not load dashboard results: {error}")
-    st.stop()
+def show_report_warnings():
+    for message in st.session_state.get("report_warnings", []):
+        st.warning(message, icon=":material/warning:")
 
 
 # --------------------------------------------------
 # Sidebar navigation
 # --------------------------------------------------
+has_results = "analysis_results" in st.session_state
+
+# Switch page after a finished analysis (must happen before the radio exists)
+if "next_page" in st.session_state:
+    st.session_state["page"] = st.session_state.pop("next_page")
+elif "page" not in st.session_state:
+    st.session_state["page"] = PAGES[1] if has_results else PAGES[0]
+
 st.sidebar.title("🛡️ CyberSentry")
 st.sidebar.caption("Detect. Understand. Respond.")
-st.sidebar.caption(f"Data source: {results_source}")
+if has_results:
+    st.sidebar.caption(
+        f"Analysed file: {st.session_state.get('uploaded_name', 'uploaded CSV')}"
+    )
 
-page = st.sidebar.radio(
-    "Navigate",
-    [
-        "Security Overview",
-        "Upload Network Data",
-        "Threat Detection",
-        "Threat Analysis",
-        "Incident Reports",
-    ],
-)
+page = st.sidebar.radio("Navigate", PAGES, key="page")
 
 st.sidebar.divider()
 st.sidebar.caption("AI-assisted analysis for human security analysts.")
 
+# Every page except Upload needs analysis results
+if page != "Upload Network Data" and not has_results:
+    st.header(page)
+    st.info(
+        "Upload a CSV on the Upload page to start.",
+        icon=":material/upload_file:",
+    )
+    st.stop()
+
+if has_results:
+    df = st.session_state["analysis_results"].copy()
+    df["risk_level"] = df.apply(get_risk_level, axis=1)
+
 
 # --------------------------------------------------
-# 1. Security Overview
+# 1. Upload Network Data
 # --------------------------------------------------
-if page == "Security Overview":
+if page == "Upload Network Data":
+    st.header("Upload Network Data")
+    st.write(
+        "Upload a CICFlowMeter-format CSV (same columns as CIC-IDS2017). "
+        "CyberSentry runs the detection models on every row and writes an "
+        "incident report for each attack type it finds."
+    )
+
+    uploaded_file = st.file_uploader(
+        "Choose a CSV file (maximum 20 MB)",
+        type=["csv"],
+    )
+
+    if uploaded_file is not None:
+        if uploaded_file.size > 20 * 1024 * 1024:
+            st.error("File is too large. Please upload a file under 20 MB.")
+        else:
+            try:
+                uploaded_df = pd.read_csv(uploaded_file)
+                uploaded_df.columns = uploaded_df.columns.str.strip()
+
+                if uploaded_df.empty:
+                    st.error("The uploaded CSV contains no rows.")
+                else:
+                    missing_columns = [
+                        column
+                        for column in required_columns()
+                        if column not in uploaded_df.columns
+                    ]
+
+                    if missing_columns:
+                        st.error(
+                            "The CSV is missing required columns: "
+                            + ", ".join(missing_columns)
+                        )
+                    else:
+                        st.success(
+                            f"CSV validated: {len(uploaded_df):,} rows."
+                        )
+                        st.dataframe(uploaded_df.head(10))
+
+                        if st.button("Run Analysis", type="primary"):
+                            try:
+                                with st.spinner("Running detection models..."):
+                                    results, cleaning_report = run_analysis(
+                                        uploaded_df
+                                    )
+
+                                progress_bar = st.progress(
+                                    0.0, text="Writing incident reports..."
+                                )
+
+                                def update_progress(done, total, attack):
+                                    text = (
+                                        f"Writing incident report for {attack} "
+                                        f"({done + 1}/{total})..."
+                                        if attack
+                                        else "Incident reports ready."
+                                    )
+                                    progress_bar.progress(
+                                        done / total if total else 1.0,
+                                        text=text,
+                                    )
+
+                                reports, report_warnings = generate_reports(
+                                    results, progress=update_progress
+                                )
+
+                                st.session_state["analysis_results"] = results
+                                st.session_state["cleaning_report"] = (
+                                    cleaning_report
+                                )
+                                st.session_state["incident_reports"] = reports
+                                st.session_state["report_warnings"] = (
+                                    report_warnings
+                                )
+                                st.session_state["uploaded_name"] = (
+                                    uploaded_file.name
+                                )
+                                st.session_state["next_page"] = (
+                                    "Security Overview"
+                                )
+                                st.rerun()
+
+                            except Exception as error:
+                                st.error(f"Analysis failed: {error}")
+
+            except (pd.errors.ParserError, UnicodeDecodeError) as error:
+                st.error(f"Could not read this CSV: {error}")
+            except Exception as error:
+                st.error(f"Upload validation failed: {error}")
+
+    if has_results:
+        report = st.session_state["cleaning_report"]
+        st.subheader("Latest Analysis")
+        st.caption(f"File: {st.session_state.get('uploaded_name', '')}")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Rows Uploaded", f"{report['rows_in']:,}")
+        col2.metric("Invalid Rows Dropped", f"{report['rows_dropped_invalid']:,}")
+        col3.metric("Rows Analysed", f"{report['rows_analysed']:,}")
+        col4.metric("Threats Detected", f"{report['threats_detected']:,}")
+        show_report_warnings()
+    else:
+        # Load the models while the user picks a file
+        get_pipeline()
+
+
+# --------------------------------------------------
+# 2. Security Overview
+# --------------------------------------------------
+elif page == "Security Overview":
     st.header("Security Overview")
 
     total_flows = len(df)
@@ -189,12 +287,12 @@ if page == "Security Overview":
                 "Critical": "#ef4444",
             },
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
 
     with right:
         st.subheader("Attacks by Type")
         attacks = df.loc[
-            df["attack_type"].str.upper() != "BENIGN",
+            df["is_threat"],
             "attack_type",
         ].value_counts().rename_axis("Attack Type").reset_index(
             name="Number of Flows"
@@ -209,9 +307,9 @@ if page == "Security Overview":
                 color="Number of Flows",
                 color_continuous_scale="Reds",
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig)
         else:
-            st.info("No attack types were found.")
+            st.info("No attacks were detected in this file.")
 
     st.subheader("Model Confidence Distribution")
     confidence_scores = df["confidence"].dropna()
@@ -227,87 +325,12 @@ if page == "Security Overview":
             yaxis_title="Number of Flows",
             showlegend=False,
         )
-        st.plotly_chart(fig, use_container_width=True)
-        st.caption("Rows with missing confidence scores are excluded.")
+        st.plotly_chart(fig)
+        st.caption(
+            "Only flows flagged by Stage 1 get a Stage 2 confidence score."
+        )
     else:
         st.info("No confidence scores are available.")
-
-
-# --------------------------------------------------
-# 2. Upload Network Data
-# --------------------------------------------------
-elif page == "Upload Network Data":
-    st.header("Upload Network Data")
-    st.write(
-        "Upload a CSV containing the required network-flow feature columns."
-    )
-    st.info(
-        "Demo mode: Run Analysis currently displays the saved demo results. "
-        "It does not run a new prediction on the uploaded rows."
-    )
-
-    uploaded_file = st.file_uploader(
-    "Choose a CSV file (maximum 20 MB)",
-    type=["csv"],
-    )
-
-    if uploaded_file is not None:
-        if uploaded_file.size > 20 * 1024 * 1024:
-            st.error("File is too large. Please upload a file under 20 MB.")
-        else:
-            try:
-                uploaded_df = pd.read_csv(uploaded_file)
-
-                if uploaded_df.empty:
-                    st.error("The uploaded CSV contains no rows.")
-                else:
-                    required_columns = set(load_demo_flows().columns)
-                    missing_columns = sorted(
-                        required_columns - set(uploaded_df.columns)
-                    )
-
-                    if missing_columns:
-                        st.error(
-                            "The CSV is missing required columns: "
-                            + ", ".join(missing_columns)
-                        )
-                    else:
-                        st.success(
-                            f"CSV validated: {len(uploaded_df):,} rows."
-                        )
-                        st.dataframe(
-                            uploaded_df.head(10),
-                            use_container_width=True,
-                        )
-
-                        if st.button(
-                            "Run Analysis",
-                            type="primary",
-                        ):
-                            try:
-                                with st.spinner("Loading demo results..."):
-                                    results, cleaning_report = run_analysis(
-                                        uploaded_df
-                                    )
-
-                                st.session_state["analysis_results"] = results
-                                st.session_state["cleaning_report"] = (
-                                    cleaning_report
-                                )
-                                st.success("Demo results loaded successfully.")
-                                st.rerun()
-
-                            except Exception as error:
-                                st.error(f"Analysis failed: {error}")
-
-            except (pd.errors.ParserError, UnicodeDecodeError) as error:
-                st.error(f"Could not read this CSV: {error}")
-            except Exception as error:
-                st.error(f"Upload validation failed: {error}")
-
-    if "cleaning_report" in st.session_state:
-        st.subheader("Latest Demo Run")
-        st.json(st.session_state["cleaning_report"])
 
 
 # --------------------------------------------------
@@ -330,7 +353,7 @@ elif page == "Threat Detection":
             attack_options,
         )
 
-    risk_options = ["All", "Low", "Medium", "High", "Critical"]
+    risk_options = ["All", "Medium", "High", "Critical"]
     with col2:
         selected_risk = st.selectbox(
             "Risk Level",
@@ -379,11 +402,7 @@ elif page == "Threat Detection":
             show_risk_color,
             subset=["risk_level"],
         )
-        st.dataframe(
-            styled_table,
-            use_container_width=True,
-            hide_index=True,
-        )
+        st.dataframe(styled_table, hide_index=True)
     else:
         st.info("No threats match the selected filters.")
 
@@ -396,11 +415,7 @@ elif page == "Threat Detection":
 
     with st.expander("View raw network features"):
         if not threats.empty:
-            st.dataframe(
-                threats.head(100),
-                use_container_width=True,
-                hide_index=True,
-            )
+            st.dataframe(threats.head(100), hide_index=True)
             st.caption("Showing up to 100 filtered threat rows.")
         else:
             st.info("No filtered threat rows to display.")
@@ -414,14 +429,11 @@ elif page == "Threat Analysis":
     st.caption("Explore attack patterns and compare them with BENIGN traffic.")
 
     attack_types = sorted(
-        df.loc[
-            df["attack_type"].str.upper() != "BENIGN",
-            "attack_type",
-        ].unique().tolist()
+        df.loc[df["is_threat"], "attack_type"].unique().tolist()
     )
 
     if not attack_types:
-        st.info("No attack types are available for analysis.")
+        st.info("No attacks were detected in this file.")
     else:
         selected_analysis_attack = st.selectbox(
             "Select an attack type",
@@ -431,7 +443,7 @@ elif page == "Threat Analysis":
         attack_df = df.loc[
             df["attack_type"] == selected_analysis_attack
         ]
-        benign_df = df.loc[df["attack_type"].str.upper() == "BENIGN"]
+        benign_df = df.loc[df["attack_type"] == "BENIGN"]
 
         average_confidence = attack_df["confidence"].mean()
 
@@ -459,54 +471,53 @@ elif page == "Threat Analysis":
                 yaxis_title="Number of Flows",
                 showlegend=False,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig)
         else:
             st.info("No Stage 1 scores are available for this attack.")
 
-        st.subheader("Attack Features vs BENIGN Averages")
+        st.subheader(f"{selected_analysis_attack} vs BENIGN Feature Averages")
 
-        excluded_columns = {
-            "stage1_score",
-            "confidence",
-            "is_threat",
-            "needs_review",
-            "suspicious",
-            "attack_type",
-            "risk_level",
-        }
-
+        # Model input features only (no result columns, no labels)
         numeric_features = [
             column
-            for column in df.select_dtypes(include="number").columns
-            if column not in excluded_columns
+            for column in required_columns()
+            if column in df.columns
         ]
 
         if benign_df.empty:
             st.info("BENIGN rows are required for feature comparison.")
-        elif not numeric_features:
-            st.info("No numeric network features are available.")
         else:
+            attack_means = attack_df[numeric_features].mean()
+            benign_means = benign_df[numeric_features].mean()
+
+            # Default to the features that differ most from normal traffic,
+            # among those a log scale can draw (both averages above 0)
+            drawable = (attack_means > 0) & (benign_means > 0)
+            difference = (
+                np.log10(attack_means[drawable]) - np.log10(benign_means[drawable])
+            ).abs().drop("Destination Port", errors="ignore")
+            default_features = (
+                difference.sort_values(ascending=False).head(5).index.tolist()
+            )
+
             selected_features = st.multiselect(
                 "Choose network features",
                 numeric_features,
-                default=numeric_features[:5],
+                default=default_features,
+                key=f"features_{selected_analysis_attack}",
             )
 
             if selected_features:
-                attack_means = attack_df[selected_features].mean()
-                benign_means = benign_df[selected_features].mean()
-
                 comparison_df = pd.DataFrame({
-                    "Attack Mean": attack_means,
-                    "BENIGN Mean": benign_means,
+                    f"{selected_analysis_attack} Mean": attack_means[
+                        selected_features
+                    ],
+                    "BENIGN Mean": benign_means[selected_features],
                 }).dropna()
 
                 if not comparison_df.empty:
                     comparison_df.index.name = "Feature"
-                    st.dataframe(
-                        comparison_df,
-                        use_container_width=True,
-                    )
+                    st.dataframe(comparison_df)
 
                     chart_df = comparison_df.reset_index().melt(
                         id_vars="Feature",
@@ -520,10 +531,19 @@ elif page == "Threat Analysis":
                         y="Average Value",
                         color="Traffic Type",
                         barmode="group",
-                        title="Average Feature Values: Attack vs BENIGN",
+                        log_y=True,
+                        title=(
+                            f"Average Feature Values: "
+                            f"{selected_analysis_attack} vs BENIGN (log scale)"
+                        ),
                     )
                     fig.update_layout(xaxis_tickangle=-35)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig)
+                    if (chart_df["Average Value"] <= 0).any():
+                        st.caption(
+                            "Zero or negative averages cannot be drawn on a "
+                            "log scale; see the table for exact values."
+                        )
                 else:
                     st.info("No valid feature averages could be calculated.")
             else:
@@ -538,68 +558,57 @@ elif page == "Incident Reports":
     st.caption(
         "Reports are AI-assisted evidence summaries and require human review."
     )
+    show_report_warnings()
 
-    reports_dir = (
-        Path(__file__).resolve().parent.parent
-        / "reports"
-        / "samples"
-    )
+    reports = st.session_state.get("incident_reports", {})
 
-    if not reports_dir.is_dir():
-        st.warning("The reports/samples folder was not found.")
+    if not reports:
+        st.info("No attacks were detected, so there are no incident reports.")
     else:
-        report_files = sorted(reports_dir.glob("*.md"))
+        selected_attack = st.selectbox(
+            "Select an attack type",
+            list(reports.keys()),
+        )
+        report = reports[selected_attack]
+        file_stem = f"{report['incident_id']}"
 
-        if not report_files:
-            st.info("No Markdown incident reports were found.")
-        else:
-            attack_types = sorted(
-                df.loc[
-                    df["attack_type"].str.upper() != "BENIGN",
-                    "attack_type",
-                ].unique().tolist()
-            )
-
-            report_lookup = {
-                normalize_name(file.stem): file
-                for file in report_files
-            }
-
-            matched_attacks = {
-                attack: report_lookup[normalize_name(attack)]
-                for attack in attack_types
-                if normalize_name(attack) in report_lookup
-            }
-
-            if matched_attacks:
-                selected_attack = st.selectbox(
-                    "Select an attack type",
-                    list(matched_attacks.keys()),
+        col1, col2 = st.columns(2)
+        with col1:
+            try:
+                pdf_bytes = report_to_pdf(
+                    report["markdown"],
+                    report["incident_id"],
+                    report["severity"],
+                    selected_attack,
                 )
-                selected_report_path = matched_attacks[selected_attack]
-            else:
-                st.info(
-                    "No report filenames exactly match the detected attack "
-                    "type names. You can select an available report below."
+                st.download_button(
+                    "Download PDF",
+                    data=pdf_bytes,
+                    file_name=f"{file_stem}.pdf",
+                    mime="application/pdf",
+                    icon=":material/picture_as_pdf:",
+                    width="stretch",
                 )
-                selected_report_path = st.selectbox(
-                    "Select a saved report",
-                    report_files,
-                    format_func=lambda file: file.stem,
-                )
-
-            report_text = selected_report_path.read_text(
-                encoding="utf-8"
-            )
-
-            st.markdown(report_text)
-
+            except Exception as error:
+                st.error(f"Could not create the PDF: {error}")
+        with col2:
             st.download_button(
-                "Download Incident Report",
-                data=report_text,
-                file_name=selected_report_path.name,
-                mime="text/markdown",
+                "Download TXT",
+                data=report_to_txt(
+                    report["markdown"],
+                    report["incident_id"],
+                    report["severity"],
+                    selected_attack,
+                ),
+                file_name=f"{file_stem}.txt",
+                mime="text/plain",
+                icon=":material/description:",
+                width="stretch",
             )
+
+        st.caption(f"Narrative source: {report['source']}")
+        with st.container(border=True):
+            st.markdown(report["markdown"])
 
 st.divider()
 st.caption(

@@ -1,0 +1,12 @@
+[client]
+toolbarMode = "viewer"
+showErrorDetails = false
+
+[server]
+maxUploadSize = 20
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "dark"

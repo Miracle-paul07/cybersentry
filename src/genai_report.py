@@ -121,6 +121,9 @@ def feature_unit(name):
     return "as recorded by CICFlowMeter"
 
 
+NOT_IN_NORMAL = "not seen in normal traffic"
+
+
 def _ratio_fmt(r):
     return float(f"{r:.3g}")
 
@@ -136,10 +139,15 @@ def build_evidence(flows, attack_type, baseline, total_flows, top_n_features=6):
         if f not in flows.columns or f == "Destination Port":
             continue
         attack_med = float(flows[f].median())
-        ratio = (attack_med / normal) if (normal > 1e-9 and attack_med >= 0) else None
+        if abs(normal) <= 1e-9 and attack_med > 0:
+            times_normal = NOT_IN_NORMAL   # a ratio against 0 is meaningless
+        elif normal > 1e-9 and attack_med >= 0:
+            times_normal = _ratio_fmt(attack_med / normal)
+        else:
+            times_normal = None
         comparison.append({"feature": f, "unit": feature_unit(f),
                            "attack_median": _fmt(attack_med), "normal_median": _fmt(normal),
-                           "times_normal": _ratio_fmt(ratio) if ratio is not None else None,
+                           "times_normal": times_normal,
                            # how different from normal, on a log scale; safe for 0 and -1 ("not available") values
                            "_score": abs(np.log1p(abs(attack_med)) - np.log1p(abs(normal)))})
     comparison = sorted(comparison, key=lambda r: r["_score"], reverse=True)[:top_n_features]
@@ -196,6 +204,8 @@ STRICT RULES:
 - If something is not in the evidence, say it is not available rather than guessing.
 - Every feature has a "unit". Always use that exact unit (e.g. microseconds), never convert or guess units.
 - times_normal is attack_median / normal_median: above 1 means higher than normal, below 1 means lower than normal.
+  If times_normal is the text "not seen in normal traffic", the normal median is 0: write exactly that phrase, never a ratio
+  and never "not available". If times_normal is null, simply do not mention a ratio.
 - Items in data_not_available do not exist in this system: never mention specific values for them, and do not ask the analyst to look them up in this report (they may check external logs).
 - The detection comes from ML/DL models and may be wrong; if flows_needing_analyst_review > 0 or confidence is below 90%, say that verification is needed.
 - Recommended actions must be based on standard_actions; you may adapt the wording but not add risky actions.
@@ -238,7 +248,10 @@ def template_narrative(evidence):
     ev = [f"{e['flows_detected']} flows classified as {e['attack_type']} "
           f"({e['share_of_analysed_traffic_pct']}% of analysed traffic)",
           f"Mean model confidence {e['mean_confidence_pct']}% (minimum {e['min_confidence_pct']}%)"]
-    ev += [f"{r['feature']}: median {r['attack_median']} vs {r['normal_median']} {r['unit']} in normal traffic" for r in feats[:3]]
+    ev += [f"{r['feature']}: median {r['attack_median']} {r['unit']}, {NOT_IN_NORMAL}"
+           if r["times_normal"] == NOT_IN_NORMAL else
+           f"{r['feature']}: median {r['attack_median']} vs {r['normal_median']} {r['unit']} in normal traffic"
+           for r in feats[:3]]
     return {
         "title": f"{e['attack_type']} activity detected",
         "summary": f"CyberSentry detected {e['flows_detected']} flows classified as {e['attack_type']}. "
