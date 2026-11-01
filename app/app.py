@@ -11,6 +11,7 @@ from backend import (
     run_analysis,
 )
 from report_export import report_to_pdf, report_to_txt
+from risk import get_risk_level
 
 # --------------------------------------------------
 # Page configuration
@@ -53,28 +54,9 @@ PAGES = [
     "Incident Reports",
 ]
 
-# Attack types rated Critical when detected with high confidence
-SEVERE_ATTACKS = {"DDOS", "INFILTRATION", "HEARTBLEED", "BOT"}
-
 # --------------------------------------------------
 # Helper functions
 # --------------------------------------------------
-def get_risk_level(row):
-    """Derive a risk level from attack type, confidence and review status."""
-    attack = str(row["attack_type"]).strip().upper()
-    confidence = row["confidence"]
-
-    if attack == "BENIGN":
-        return "Low"
-    if row["needs_review"]:
-        return "Medium"
-    if pd.notna(confidence) and confidence >= 0.90:
-        if attack in SEVERE_ATTACKS or attack.startswith("DOS"):
-            return "Critical"
-        return "High"
-    return "Medium"
-
-
 def show_risk_color(value):
     """Apply readable colors to risk levels in the threat table."""
     colors = {

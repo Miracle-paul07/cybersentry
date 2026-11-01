@@ -273,7 +273,7 @@ _IP = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 def _numbers_in(obj):
     nums = set()
-    for m in _NUM.findall(json.dumps(obj)):
+    for m in _NUM.findall(json.dumps(obj, ensure_ascii=False)):
         try:
             v = float(m.replace(",", ""))
         except ValueError:
@@ -286,7 +286,8 @@ def grounding_check(narrative, evidence, ignore_below=10):
     """Return numbers in the narrative that do NOT appear in the evidence (possible hallucinations).
     Small integers (< ignore_below) are ignored because they are usually list counts or wording."""
     allowed = _numbers_in(evidence)
-    ev_text, nar_text = json.dumps(evidence), json.dumps(narrative)
+    # ensure_ascii=False: an escape like — would otherwise merge with the digits after it
+    ev_text, nar_text = json.dumps(evidence, ensure_ascii=False), json.dumps(narrative, ensure_ascii=False)
     unsupported = [ip for ip in _IP.findall(nar_text) if ip not in ev_text]   # invented IP addresses
     for m in _NUM.findall(_IP.sub(" ", nar_text)):
         try:

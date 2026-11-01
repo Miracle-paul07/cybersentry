@@ -11,7 +11,9 @@ joblib
 python-dotenv
 torch
 groq
-python-dotenv
+fastapi
+uvicorn
+python-multipart
 jupyter
 
 # Pick one deep-learning framework:

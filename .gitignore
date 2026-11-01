@@ -21,3 +21,7 @@ __pycache__/
 
 # Local Claude Code settings
 .claude/settings.local.json
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
