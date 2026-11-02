@@ -1,0 +1,2155 @@
+{
+  "settings": {
+    "seed": 42,
+    "max_per_class": 20000,
+    "keep_all": [
+      "DDOS attack-LOIC-UDP"
+    ],
+    "stage1_threshold": 0.5,
+    "note": "Models trained on CIC-IDS2017, not retrained."
+  },
+  "data": {
+    "per_file": {
+      "02-14-2018": {
+        "rows_read": 1048575,
+        "repeated_headers_dropped": 0,
+        "invalid_rows_dropped": 3824
+      },
+      "02-16-2018": {
+        "rows_read": 1048575,
+        "repeated_headers_dropped": 1,
+        "invalid_rows_dropped": 0
+      },
+      "02-21-2018": {
+        "rows_read": 1048575,
+        "repeated_headers_dropped": 0,
+        "invalid_rows_dropped": 0
+      },
+      "03-02-2018": {
+        "rows_read": 1048575,
+        "repeated_headers_dropped": 0,
+        "invalid_rows_dropped": 4050
+      }
+    },
+    "unmapped_labels": [],
+    "rows_after_cleaning": {
+      "Benign": 2229747,
+      "Bot": 286191,
+      "DDOS attack-HOIC": 686012,
+      "DDOS attack-LOIC-UDP": 1730,
+      "DoS attacks-Hulk": 461912,
+      "DoS attacks-SlowHTTPTest": 139890,
+      "FTP-BruteForce": 193354,
+      "SSH-Bruteforce": 187589
+    },
+    "rows_after_dropping_duplicates": {
+      "Benign": 2059880,
+      "Bot": 144535,
+      "DDOS attack-HOIC": 198861,
+      "DDOS attack-LOIC-UDP": 1730,
+      "DoS attacks-Hulk": 145199,
+      "DoS attacks-SlowHTTPTest": 55,
+      "FTP-BruteForce": 53,
+      "SSH-Bruteforce": 94048
+    },
+    "rows_in_sample": {
+      "Benign": 20000,
+      "Bot": 20000,
+      "DDOS attack-HOIC": 18270,
+      "DDOS attack-LOIC-UDP": 1730,
+      "DoS attacks-Hulk": 20000,
+      "DoS attacks-SlowHTTPTest": 55,
+      "FTP-BruteForce": 53,
+      "SSH-Bruteforce": 20000
+    },
+    "sample_by_day_and_class": {
+      "02-14-2018": {
+        "BENIGN": 5000,
+        "FTP-Patator": 53,
+        "SSH-Patator": 20000
+      },
+      "02-16-2018": {
+        "BENIGN": 5000,
+        "DoS Hulk": 20000,
+        "DoS Slowhttptest": 55
+      },
+      "02-21-2018": {
+        "BENIGN": 5000,
+        "DDoS": 20000
+      },
+      "03-02-2018": {
+        "BENIGN": 5000,
+        "Bot": 20000
+      }
+    }
+  },
+  "sample": {
+    "rows": 100108,
+    "stage1": {
+      "accuracy": 0.247423,
+      "precision": 0.999163,
+      "recall": 0.059582,
+      "f1": 0.112458,
+      "fpr": 0.0002,
+      "fnr": 0.940418,
+      "roc_auc": 0.818354,
+      "tp": 4773,
+      "fp": 4,
+      "tn": 19996,
+      "fn": 75335
+    },
+    "pipeline": {
+      "accuracy": 0.23137,
+      "precision": 0.998738,
+      "recall": 0.039522,
+      "f1": 0.076034,
+      "fpr": 0.0002,
+      "fnr": 0.960478,
+      "roc_auc": null,
+      "tp": 3166,
+      "fp": 4,
+      "tn": 19996,
+      "fn": 76942
+    },
+    "multiclass": {
+      "accuracy": 0.201412,
+      "macro_f1": 0.051227,
+      "per_class": [
+        {
+          "class": "BENIGN",
+          "precision": 0.206276,
+          "recall": 0.9998,
+          "f1": 0.341993,
+          "support": 20000
+        },
+        {
+          "class": "Bot",
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 20000
+        },
+        {
+          "class": "DDoS",
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 20000
+        },
+        {
+          "class": "DoS Hulk",
+          "precision": 0.993151,
+          "recall": 0.00725,
+          "f1": 0.014395,
+          "support": 20000
+        },
+        {
+          "class": "DoS Slowhttptest",
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 55
+        },
+        {
+          "class": "FTP-Patator",
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 53
+        },
+        {
+          "class": "SSH-Patator",
+          "precision": 0.956522,
+          "recall": 0.0011,
+          "f1": 0.002197,
+          "support": 20000
+        }
+      ],
+      "confusion": {
+        "true": [
+          "BENIGN",
+          "Bot",
+          "DDoS",
+          "DoS Hulk",
+          "DoS Slowhttptest",
+          "FTP-Patator",
+          "SSH-Patator"
+        ],
+        "predicted": [
+          "BENIGN",
+          "Bot",
+          "DDoS",
+          "DoS GoldenEye",
+          "DoS Hulk",
+          "DoS Slowhttptest",
+          "DoS slowloris",
+          "FTP-Patator",
+          "Heartbleed",
+          "Infiltration",
+          "PortScan",
+          "SSH-Patator",
+          "Web Attack"
+        ],
+        "matrix": [
+          [
+            19996,
+            0,
+            0,
+            1,
+            0,
+            0,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            20000,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            20000,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            16955,
+            0,
+            0,
+            2898,
+            145,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            50,
+            0,
+            0
+          ],
+          [
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            48,
+            0,
+            0
+          ],
+          [
+            19977,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            22,
+            0
+          ]
+        ]
+      }
+    }
+  },
+  "per_day": {
+    "02-14-2018": {
+      "rows": 25053,
+      "stage1": {
+        "accuracy": 0.202291,
+        "precision": 0.959459,
+        "recall": 0.003541,
+        "f1": 0.007055,
+        "fpr": 0.0006,
+        "fnr": 0.996459,
+        "roc_auc": 0.909769,
+        "tp": 71,
+        "fp": 3,
+        "tn": 4997,
+        "fn": 19982
+      },
+      "pipeline": {
+        "accuracy": 0.202291,
+        "precision": 0.959459,
+        "recall": 0.003541,
+        "f1": 0.007055,
+        "fpr": 0.0006,
+        "fnr": 0.996459,
+        "roc_auc": null,
+        "tp": 71,
+        "fp": 3,
+        "tn": 4997,
+        "fn": 19982
+      },
+      "multiclass": {
+        "accuracy": 0.200335,
+        "macro_f1": 0.111855,
+        "per_class": [
+          {
+            "class": "BENIGN",
+            "precision": 0.200048,
+            "recall": 0.9994,
+            "f1": 0.333367,
+            "support": 5000
+          },
+          {
+            "class": "FTP-Patator",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 53
+          },
+          {
+            "class": "SSH-Patator",
+            "precision": 1.0,
+            "recall": 0.0011,
+            "f1": 0.002198,
+            "support": 20000
+          }
+        ],
+        "confusion": {
+          "true": [
+            "BENIGN",
+            "FTP-Patator",
+            "SSH-Patator"
+          ],
+          "predicted": [
+            "BENIGN",
+            "Bot",
+            "DDoS",
+            "DoS GoldenEye",
+            "DoS Hulk",
+            "DoS Slowhttptest",
+            "DoS slowloris",
+            "FTP-Patator",
+            "Heartbleed",
+            "Infiltration",
+            "PortScan",
+            "SSH-Patator",
+            "Web Attack"
+          ],
+          "matrix": [
+            [
+              4997,
+              0,
+              0,
+              1,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              5,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              48,
+              0,
+              0
+            ],
+            [
+              19977,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "02-16-2018": {
+      "rows": 25055,
+      "stage1": {
+        "accuracy": 0.387228,
+        "precision": 1.0,
+        "recall": 0.234455,
+        "f1": 0.379852,
+        "fpr": 0.0,
+        "fnr": 0.765545,
+        "roc_auc": 0.998792,
+        "tp": 4702,
+        "fp": 0,
+        "tn": 5000,
+        "fn": 15353
+      },
+      "pipeline": {
+        "accuracy": 0.323089,
+        "precision": 1.0,
+        "recall": 0.154326,
+        "f1": 0.267387,
+        "fpr": 0.0,
+        "fnr": 0.845674,
+        "roc_auc": null,
+        "tp": 3095,
+        "fp": 0,
+        "tn": 5000,
+        "fn": 16960
+      },
+      "multiclass": {
+        "accuracy": 0.205348,
+        "macro_f1": 0.128439,
+        "per_class": [
+          {
+            "class": "BENIGN",
+            "precision": 0.227687,
+            "recall": 1.0,
+            "f1": 0.37092,
+            "support": 5000
+          },
+          {
+            "class": "DoS Hulk",
+            "precision": 1.0,
+            "recall": 0.00725,
+            "f1": 0.014396,
+            "support": 20000
+          },
+          {
+            "class": "DoS Slowhttptest",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 55
+          }
+        ],
+        "confusion": {
+          "true": [
+            "BENIGN",
+            "DoS Hulk",
+            "DoS Slowhttptest"
+          ],
+          "predicted": [
+            "BENIGN",
+            "Bot",
+            "DDoS",
+            "DoS GoldenEye",
+            "DoS Hulk",
+            "DoS Slowhttptest",
+            "DoS slowloris",
+            "FTP-Patator",
+            "Heartbleed",
+            "Infiltration",
+            "PortScan",
+            "SSH-Patator",
+            "Web Attack"
+          ],
+          "matrix": [
+            [
+              5000,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              16955,
+              0,
+              0,
+              2898,
+              145,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              5,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              50,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "02-21-2018": {
+      "rows": 25000,
+      "stage1": {
+        "accuracy": 0.2,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0,
+        "fnr": 1.0,
+        "roc_auc": 0.224094,
+        "tp": 0,
+        "fp": 0,
+        "tn": 5000,
+        "fn": 20000
+      },
+      "pipeline": {
+        "accuracy": 0.2,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0,
+        "fnr": 1.0,
+        "roc_auc": null,
+        "tp": 0,
+        "fp": 0,
+        "tn": 5000,
+        "fn": 20000
+      },
+      "multiclass": {
+        "accuracy": 0.2,
+        "macro_f1": 0.166667,
+        "per_class": [
+          {
+            "class": "BENIGN",
+            "precision": 0.2,
+            "recall": 1.0,
+            "f1": 0.333333,
+            "support": 5000
+          },
+          {
+            "class": "DDoS",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 20000
+          }
+        ],
+        "confusion": {
+          "true": [
+            "BENIGN",
+            "DDoS"
+          ],
+          "predicted": [
+            "BENIGN",
+            "Bot",
+            "DDoS",
+            "DoS GoldenEye",
+            "DoS Hulk",
+            "DoS Slowhttptest",
+            "DoS slowloris",
+            "FTP-Patator",
+            "Heartbleed",
+            "Infiltration",
+            "PortScan",
+            "SSH-Patator",
+            "Web Attack"
+          ],
+          "matrix": [
+            [
+              5000,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              20000,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "03-02-2018": {
+      "rows": 25000,
+      "stage1": {
+        "accuracy": 0.19996,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0002,
+        "fnr": 1.0,
+        "roc_auc": 0.899084,
+        "tp": 0,
+        "fp": 1,
+        "tn": 4999,
+        "fn": 20000
+      },
+      "pipeline": {
+        "accuracy": 0.19996,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0002,
+        "fnr": 1.0,
+        "roc_auc": null,
+        "tp": 0,
+        "fp": 1,
+        "tn": 4999,
+        "fn": 20000
+      },
+      "multiclass": {
+        "accuracy": 0.19996,
+        "macro_f1": 0.166639,
+        "per_class": [
+          {
+            "class": "BENIGN",
+            "precision": 0.199968,
+            "recall": 0.9998,
+            "f1": 0.333278,
+            "support": 5000
+          },
+          {
+            "class": "Bot",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 20000
+          }
+        ],
+        "confusion": {
+          "true": [
+            "BENIGN",
+            "Bot"
+          ],
+          "predicted": [
+            "BENIGN",
+            "Bot",
+            "DDoS",
+            "DoS GoldenEye",
+            "DoS Hulk",
+            "DoS Slowhttptest",
+            "DoS slowloris",
+            "FTP-Patator",
+            "Heartbleed",
+            "Infiltration",
+            "PortScan",
+            "SSH-Patator",
+            "Web Attack"
+          ],
+          "matrix": [
+            [
+              4999,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              20000,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "all_rows": {
+    "distinct_flows": {
+      "attack_share": 0.221029,
+      "stage1": {
+        "accuracy": 0.791596,
+        "precision": 0.987301,
+        "recall": 0.057865,
+        "f1": 0.109323,
+        "fpr": 0.000211,
+        "fnr": 0.942135,
+        "roc_auc": 0.743378,
+        "tp": 33821,
+        "fp": 435,
+        "tn": 2059445,
+        "fn": 550660
+      },
+      "pipeline": {
+        "accuracy": 0.787081,
+        "precision": 0.981933,
+        "recall": 0.03738,
+        "f1": 0.072019,
+        "fpr": 0.000195,
+        "fnr": 0.96262,
+        "roc_auc": null,
+        "tp": 21848,
+        "fp": 402,
+        "tn": 2059478,
+        "fn": 562633
+      },
+      "per_label": {
+        "Benign": {
+          "rows": 2059880,
+          "stage1_flagged": 0.000211,
+          "predicted_as_its_class": 0.999805
+        },
+        "Bot": {
+          "rows": 144535,
+          "stage1_flagged": 0.0,
+          "predicted_as_its_class": 0.0
+        },
+        "DDOS attack-HOIC": {
+          "rows": 198861,
+          "stage1_flagged": 0.0,
+          "predicted_as_its_class": 0.0
+        },
+        "DDOS attack-LOIC-UDP": {
+          "rows": 1730,
+          "stage1_flagged": 0.0,
+          "predicted_as_its_class": 0.0
+        },
+        "DoS attacks-Hulk": {
+          "rows": 145199,
+          "stage1_flagged": 0.231517,
+          "predicted_as_its_class": 0.007555
+        },
+        "DoS attacks-SlowHTTPTest": {
+          "rows": 55,
+          "stage1_flagged": 0.909091,
+          "predicted_as_its_class": 0.0
+        },
+        "FTP-BruteForce": {
+          "rows": 53,
+          "stage1_flagged": 0.90566,
+          "predicted_as_its_class": 0.0
+        },
+        "SSH-Bruteforce": {
+          "rows": 94048,
+          "stage1_flagged": 0.001138,
+          "predicted_as_its_class": 0.001085
+        }
+      }
+    },
+    "with_duplicates": {
+      "attack_share": 0.467386,
+      "stage1": {
+        "accuracy": 0.615969,
+        "precision": 0.998748,
+        "recall": 0.178567,
+        "f1": 0.302966,
+        "fpr": 0.000196,
+        "fnr": 0.821433,
+        "roc_auc": 0.744005,
+        "tp": 349398,
+        "fp": 438,
+        "tn": 2229309,
+        "fn": 1607280
+      },
+      "pipeline": {
+        "accuracy": 0.604823,
+        "precision": 0.998664,
+        "recall": 0.154703,
+        "f1": 0.267905,
+        "fpr": 0.000182,
+        "fnr": 0.845297,
+        "roc_auc": null,
+        "tp": 302704,
+        "fp": 405,
+        "tn": 2229342,
+        "fn": 1653974
+      },
+      "per_label": {
+        "Benign": {
+          "rows": 2229747,
+          "stage1_flagged": 0.000196,
+          "predicted_as_its_class": 0.999818
+        },
+        "Bot": {
+          "rows": 286191,
+          "stage1_flagged": 0.0,
+          "predicted_as_its_class": 0.0
+        },
+        "DDOS attack-HOIC": {
+          "rows": 686012,
+          "stage1_flagged": 0.0,
+          "predicted_as_its_class": 0.0
+        },
+        "DDOS attack-LOIC-UDP": {
+          "rows": 1730,
+          "stage1_flagged": 0.0,
+          "predicted_as_its_class": 0.0
+        },
+        "DoS attacks-Hulk": {
+          "rows": 461912,
+          "stage1_flagged": 0.660412,
+          "predicted_as_its_class": 0.120469
+        },
+        "DoS attacks-SlowHTTPTest": {
+          "rows": 139890,
+          "stage1_flagged": 0.134713,
+          "predicted_as_its_class": 0.0
+        },
+        "FTP-BruteForce": {
+          "rows": 193354,
+          "stage1_flagged": 0.121828,
+          "predicted_as_its_class": 0.0
+        },
+        "SSH-Bruteforce": {
+          "rows": 187589,
+          "stage1_flagged": 0.010368,
+          "predicted_as_its_class": 0.010342
+        }
+      }
+    }
+  },
+  "class_feature_medians": {
+    "BENIGN": {
+      "Destination Port": {
+        "2017": 80.0,
+        "2018": 41162.0
+      },
+      "Init_Win_bytes_backward": {
+        "2017": -1.0,
+        "2018": 211.0
+      },
+      "Fwd Packet Length Max": {
+        "2017": 41.0,
+        "2018": 935.0
+      },
+      "Packet Length Mean": {
+        "2017": 61.599998,
+        "2018": 142.888885
+      },
+      "Bwd Packet Length Max": {
+        "2017": 93.0,
+        "2018": 313.0
+      },
+      "Total Length of Fwd Packets": {
+        "2017": 68.0,
+        "2018": 935.0
+      },
+      "Bwd Packets/s": {
+        "2017": 23.847282,
+        "2018": 3.543688
+      },
+      "Flow Duration": {
+        "2017": 46090.0,
+        "2018": 290444.5
+      },
+      "Flow Packets/s": {
+        "2017": 84.530853,
+        "2018": 17.451962
+      },
+      "min_seg_size_forward": {
+        "2017": 20.0,
+        "2018": 20.0
+      },
+      "Packet Length Variance": {
+        "2017": 940.799988,
+        "2018": 100293.5
+      },
+      "Fwd IAT Std": {
+        "2017": 0.0,
+        "2018": 8591.208984
+      },
+      "Fwd IAT Mean": {
+        "2017": 4.0,
+        "2018": 52982.125
+      },
+      "Flow IAT Std": {
+        "2017": 467.594208,
+        "2018": 15223.554688
+      },
+      "Flow IAT Max": {
+        "2017": 31968.0,
+        "2018": 191065.0
+      },
+      "Flow IAT Mean": {
+        "2017": 16210.333008,
+        "2018": 71442.671875
+      },
+      "Fwd Packet Length Mean": {
+        "2017": 38.0,
+        "2018": 187.0
+      },
+      "Total Fwd Packets": {
+        "2017": 2.0,
+        "2018": 5.0
+      },
+      "Init_Win_bytes_forward": {
+        "2017": 122.0,
+        "2018": 8192.0
+      },
+      "Bwd IAT Total": {
+        "2017": 3.0,
+        "2018": 15459.5
+      },
+      "Fwd Packet Length Std": {
+        "2017": 0.0,
+        "2018": 360.588318
+      },
+      "Flow Bytes/s": {
+        "2017": 4152.385742,
+        "2018": 956.648743
+      },
+      "Flow IAT Min": {
+        "2017": 4.0,
+        "2018": 7.0
+      },
+      "Fwd IAT Min": {
+        "2017": 3.0,
+        "2018": 22.0
+      },
+      "Bwd Packet Length Min": {
+        "2017": 6.0,
+        "2018": 0.0
+      },
+      "Active Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "PSH Flag Count": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Std": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Mean": {
+        "2017": 3.0,
+        "2018": 11877.0
+      },
+      "Bwd IAT Min": {
+        "2017": 2.0,
+        "2018": 630.0
+      },
+      "Idle Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Max": {
+        "2017": 3.0,
+        "2018": 14997.0
+      }
+    },
+    "Bot": {
+      "Destination Port": {
+        "2017": 8080.0,
+        "2018": 8080.0
+      },
+      "Init_Win_bytes_backward": {
+        "2017": 237.0,
+        "2018": 219.0
+      },
+      "Fwd Packet Length Max": {
+        "2017": 6.0,
+        "2018": 326.0
+      },
+      "Packet Length Mean": {
+        "2017": 6.0,
+        "2018": 56.875
+      },
+      "Bwd Packet Length Max": {
+        "2017": 6.0,
+        "2018": 112.0
+      },
+      "Total Length of Fwd Packets": {
+        "2017": 6.0,
+        "2018": 326.0
+      },
+      "Bwd Packets/s": {
+        "2017": 41.963676,
+        "2018": 365.697571
+      },
+      "Flow Duration": {
+        "2017": 71810.5,
+        "2018": 10913.0
+      },
+      "Flow Packets/s": {
+        "2017": 97.915237,
+        "2018": 641.87793
+      },
+      "min_seg_size_forward": {
+        "2017": 20.0,
+        "2018": 20.0
+      },
+      "Packet Length Variance": {
+        "2017": 10.285714,
+        "2018": 13318.696289
+      },
+      "Fwd IAT Std": {
+        "2017": 1610.789307,
+        "2018": 311.126984
+      },
+      "Fwd IAT Mean": {
+        "2017": 23830.166016,
+        "2018": 280.5
+      },
+      "Flow IAT Std": {
+        "2017": 28124.417969,
+        "2018": 3988.952637
+      },
+      "Flow IAT Max": {
+        "2017": 69632.5,
+        "2018": 9951.0
+      },
+      "Flow IAT Mean": {
+        "2017": 11915.083008,
+        "2018": 1817.5
+      },
+      "Fwd Packet Length Mean": {
+        "2017": 6.0,
+        "2018": 108.666664
+      },
+      "Total Fwd Packets": {
+        "2017": 3.0,
+        "2018": 3.0
+      },
+      "Init_Win_bytes_forward": {
+        "2017": 8192.0,
+        "2018": 8192.0
+      },
+      "Bwd IAT Total": {
+        "2017": 70344.5,
+        "2018": 10368.0
+      },
+      "Fwd Packet Length Std": {
+        "2017": 0.0,
+        "2018": 188.216187
+      },
+      "Flow Bytes/s": {
+        "2017": 4790.366211,
+        "2018": 41628.546875
+      },
+      "Flow IAT Min": {
+        "2017": 47.0,
+        "2018": 15.0
+      },
+      "Fwd IAT Min": {
+        "2017": 24.0,
+        "2018": 53.0
+      },
+      "Bwd Packet Length Min": {
+        "2017": 6.0,
+        "2018": 0.0
+      },
+      "Active Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "PSH Flag Count": {
+        "2017": 1.0,
+        "2018": 1.0
+      },
+      "Bwd IAT Std": {
+        "2017": 1704.127319,
+        "2018": 5581.425781
+      },
+      "Bwd IAT Mean": {
+        "2017": 34984.75,
+        "2018": 3451.333252
+      },
+      "Bwd IAT Min": {
+        "2017": 579.0,
+        "2018": 15.0
+      },
+      "Idle Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Max": {
+        "2017": 69632.5,
+        "2018": 9897.0
+      }
+    },
+    "DDoS": {
+      "Destination Port": {
+        "2017": 80.0,
+        "2018": 80.0
+      },
+      "Init_Win_bytes_backward": {
+        "2017": 229.0,
+        "2018": 219.0
+      },
+      "Fwd Packet Length Max": {
+        "2017": 20.0,
+        "2018": 288.0
+      },
+      "Packet Length Mean": {
+        "2017": 833.5,
+        "2018": 152.875
+      },
+      "Bwd Packet Length Max": {
+        "2017": 5755.0,
+        "2018": 935.0
+      },
+      "Total Length of Fwd Packets": {
+        "2017": 26.0,
+        "2018": 300.0
+      },
+      "Bwd Packets/s": {
+        "2017": 0.07262,
+        "2018": 283.235962
+      },
+      "Flow Duration": {
+        "2017": 1888734.5,
+        "2018": 12599.0
+      },
+      "Flow Packets/s": {
+        "2017": 2.519281,
+        "2018": 605.353027
+      },
+      "min_seg_size_forward": {
+        "2017": 20.0,
+        "2018": 20.0
+      },
+      "Packet Length Variance": {
+        "2017": 3625073.75,
+        "2018": 110028.984375
+      },
+      "Fwd IAT Std": {
+        "2017": 968319.625,
+        "2018": 5487.855957
+      },
+      "Fwd IAT Mean": {
+        "2017": 500511.25,
+        "2018": 4894.25
+      },
+      "Flow IAT Std": {
+        "2017": 968319.625,
+        "2018": 3494.751465
+      },
+      "Flow IAT Max": {
+        "2017": 1886159.5,
+        "2018": 11200.5
+      },
+      "Flow IAT Mean": {
+        "2017": 500184.34375,
+        "2018": 1942.833252
+      },
+      "Fwd Packet Length Mean": {
+        "2017": 7.0,
+        "2018": 96.0
+      },
+      "Total Fwd Packets": {
+        "2017": 4.0,
+        "2018": 3.0
+      },
+      "Init_Win_bytes_forward": {
+        "2017": 256.0,
+        "2018": 65535.0
+      },
+      "Bwd IAT Total": {
+        "2017": 72899.5,
+        "2018": 6980.5
+      },
+      "Fwd Packet Length Std": {
+        "2017": 5.656854,
+        "2018": 166.276871
+      },
+      "Flow Bytes/s": {
+        "2017": 159.221237,
+        "2018": 87761.046875
+      },
+      "Flow IAT Min": {
+        "2017": 4.0,
+        "2018": 4.0
+      },
+      "Fwd IAT Min": {
+        "2017": 9.0,
+        "2018": 310.0
+      },
+      "Bwd Packet Length Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Active Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "PSH Flag Count": {
+        "2017": 0.0,
+        "2018": 1.0
+      },
+      "Bwd IAT Std": {
+        "2017": 33147.945312,
+        "2018": 3604.132324
+      },
+      "Bwd IAT Mean": {
+        "2017": 19045.875,
+        "2018": 2326.833496
+      },
+      "Bwd IAT Min": {
+        "2017": 4.0,
+        "2018": 22.0
+      },
+      "Idle Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Max": {
+        "2017": 66713.5,
+        "2018": 6487.5
+      }
+    },
+    "DoS Hulk": {
+      "Destination Port": {
+        "2017": 80.0,
+        "2018": 80.0
+      },
+      "Init_Win_bytes_backward": {
+        "2017": 235.0,
+        "2018": -1.0
+      },
+      "Fwd Packet Length Max": {
+        "2017": 345.0,
+        "2018": 0.0
+      },
+      "Packet Length Mean": {
+        "2017": 852.642883,
+        "2018": 0.0
+      },
+      "Bwd Packet Length Max": {
+        "2017": 5792.0,
+        "2018": 0.0
+      },
+      "Total Length of Fwd Packets": {
+        "2017": 354.0,
+        "2018": 0.0
+      },
+      "Bwd Packets/s": {
+        "2017": 0.070069,
+        "2018": 0.0
+      },
+      "Flow Duration": {
+        "2017": 86417490.0,
+        "2018": 50929.0
+      },
+      "Flow Packets/s": {
+        "2017": 0.148766,
+        "2018": 52.909119
+      },
+      "min_seg_size_forward": {
+        "2017": 32.0,
+        "2018": 32.0
+      },
+      "Packet Length Variance": {
+        "2017": 2731429.5,
+        "2018": 0.0
+      },
+      "Fwd IAT Std": {
+        "2017": 37200000.0,
+        "2018": 6144.050781
+      },
+      "Fwd IAT Mean": {
+        "2017": 14200000.0,
+        "2018": 30644.5
+      },
+      "Flow IAT Std": {
+        "2017": 25700000.0,
+        "2018": 7296.409668
+      },
+      "Flow IAT Max": {
+        "2017": 85900000.0,
+        "2018": 41428.5
+      },
+      "Flow IAT Mean": {
+        "2017": 7222903.5,
+        "2018": 30615.0
+      },
+      "Fwd Packet Length Mean": {
+        "2017": 54.0,
+        "2018": 0.0
+      },
+      "Total Fwd Packets": {
+        "2017": 6.0,
+        "2018": 3.0
+      },
+      "Init_Win_bytes_forward": {
+        "2017": 251.0,
+        "2018": 225.0
+      },
+      "Bwd IAT Total": {
+        "2017": 148634.0,
+        "2018": 0.0
+      },
+      "Fwd Packet Length Std": {
+        "2017": 134.644714,
+        "2018": 0.0
+      },
+      "Flow Bytes/s": {
+        "2017": 123.95118,
+        "2018": 0.0
+      },
+      "Flow IAT Min": {
+        "2017": 1.0,
+        "2018": 18574.0
+      },
+      "Fwd IAT Min": {
+        "2017": 2.0,
+        "2018": 19005.0
+      },
+      "Bwd Packet Length Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Active Min": {
+        "2017": 1000.0,
+        "2018": 0.0
+      },
+      "PSH Flag Count": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Std": {
+        "2017": 59825.167969,
+        "2018": 0.0
+      },
+      "Bwd IAT Mean": {
+        "2017": 29903.400391,
+        "2018": 0.0
+      },
+      "Bwd IAT Min": {
+        "2017": 46.0,
+        "2018": 0.0
+      },
+      "Idle Min": {
+        "2017": 85600000.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Max": {
+        "2017": 136146.0,
+        "2018": 0.0
+      }
+    },
+    "DoS Slowhttptest": {
+      "Destination Port": {
+        "2017": 80.0,
+        "2018": 21.0
+      },
+      "Init_Win_bytes_backward": {
+        "2017": -1.0,
+        "2018": 0.0
+      },
+      "Fwd Packet Length Max": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Packet Length Mean": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd Packet Length Max": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Total Length of Fwd Packets": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd Packets/s": {
+        "2017": 0.0,
+        "2018": 35714.285156
+      },
+      "Flow Duration": {
+        "2017": 63122514.0,
+        "2018": 28.0
+      },
+      "Flow Packets/s": {
+        "2017": 0.110906,
+        "2018": 71428.570312
+      },
+      "min_seg_size_forward": {
+        "2017": 40.0,
+        "2018": 40.0
+      },
+      "Packet Length Variance": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Fwd IAT Std": {
+        "2017": 11900000.0,
+        "2018": 0.0
+      },
+      "Fwd IAT Mean": {
+        "2017": 10500000.0,
+        "2018": 0.0
+      },
+      "Flow IAT Std": {
+        "2017": 11900000.0,
+        "2018": 0.0
+      },
+      "Flow IAT Max": {
+        "2017": 32100000.0,
+        "2018": 28.0
+      },
+      "Flow IAT Mean": {
+        "2017": 10500000.0,
+        "2018": 28.0
+      },
+      "Fwd Packet Length Mean": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Total Fwd Packets": {
+        "2017": 7.0,
+        "2018": 1.0
+      },
+      "Init_Win_bytes_forward": {
+        "2017": 29200.0,
+        "2018": 26883.0
+      },
+      "Bwd IAT Total": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Fwd Packet Length Std": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Flow Bytes/s": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Flow IAT Min": {
+        "2017": 996550.5,
+        "2018": 28.0
+      },
+      "Fwd IAT Min": {
+        "2017": 996965.0,
+        "2018": 0.0
+      },
+      "Bwd Packet Length Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Active Min": {
+        "2017": 7004681.5,
+        "2018": 0.0
+      },
+      "PSH Flag Count": {
+        "2017": 1.0,
+        "2018": 1.0
+      },
+      "Bwd IAT Std": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Mean": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Idle Min": {
+        "2017": 8015914.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Max": {
+        "2017": 0.0,
+        "2018": 0.0
+      }
+    },
+    "FTP-Patator": {
+      "Destination Port": {
+        "2017": 21.0,
+        "2018": 21.0
+      },
+      "Init_Win_bytes_backward": {
+        "2017": 227.0,
+        "2018": 0.0
+      },
+      "Fwd Packet Length Max": {
+        "2017": 22.0,
+        "2018": 0.0
+      },
+      "Packet Length Mean": {
+        "2017": 11.6,
+        "2018": 0.0
+      },
+      "Bwd Packet Length Max": {
+        "2017": 34.0,
+        "2018": 0.0
+      },
+      "Total Length of Fwd Packets": {
+        "2017": 102.0,
+        "2018": 0.0
+      },
+      "Bwd Packets/s": {
+        "2017": 1.728172,
+        "2018": 37037.035156
+      },
+      "Flow Duration": {
+        "2017": 8653363.0,
+        "2018": 27.0
+      },
+      "Flow Packets/s": {
+        "2017": 2.773488,
+        "2018": 74074.070312
+      },
+      "min_seg_size_forward": {
+        "2017": 32.0,
+        "2018": 40.0
+      },
+      "Packet Length Variance": {
+        "2017": 156.583328,
+        "2018": 0.0
+      },
+      "Fwd IAT Std": {
+        "2017": 1314615.5,
+        "2018": 0.0
+      },
+      "Fwd IAT Mean": {
+        "2017": 713640.125,
+        "2018": 0.0
+      },
+      "Flow IAT Std": {
+        "2017": 975621.625,
+        "2018": 0.0
+      },
+      "Flow IAT Max": {
+        "2017": 3109912.0,
+        "2018": 27.0
+      },
+      "Flow IAT Mean": {
+        "2017": 376233.1875,
+        "2018": 27.0
+      },
+      "Fwd Packet Length Mean": {
+        "2017": 11.333333,
+        "2018": 0.0
+      },
+      "Total Fwd Packets": {
+        "2017": 9.0,
+        "2018": 1.0
+      },
+      "Init_Win_bytes_forward": {
+        "2017": 29200.0,
+        "2018": 26883.0
+      },
+      "Bwd IAT Total": {
+        "2017": 8653261.5,
+        "2018": 0.0
+      },
+      "Fwd Packet Length Std": {
+        "2017": 9.899495,
+        "2018": 0.0
+      },
+      "Flow Bytes/s": {
+        "2017": 34.036404,
+        "2018": 0.0
+      },
+      "Flow IAT Min": {
+        "2017": 3.0,
+        "2018": 27.0
+      },
+      "Fwd IAT Min": {
+        "2017": 211.0,
+        "2018": 0.0
+      },
+      "Bwd Packet Length Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Active Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "PSH Flag Count": {
+        "2017": 1.0,
+        "2018": 1.0
+      },
+      "Bwd IAT Std": {
+        "2017": 1204289.25,
+        "2018": 0.0
+      },
+      "Bwd IAT Mean": {
+        "2017": 618090.125,
+        "2018": 0.0
+      },
+      "Bwd IAT Min": {
+        "2017": 3.0,
+        "2018": 0.0
+      },
+      "Idle Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Max": {
+        "2017": 3109912.0,
+        "2018": 0.0
+      }
+    },
+    "SSH-Patator": {
+      "Destination Port": {
+        "2017": 22.0,
+        "2018": 22.0
+      },
+      "Init_Win_bytes_backward": {
+        "2017": 247.0,
+        "2018": 230.0
+      },
+      "Fwd Packet Length Max": {
+        "2017": 640.0,
+        "2018": 640.0
+      },
+      "Packet Length Mean": {
+        "2017": 88.018517,
+        "2018": 102.422226
+      },
+      "Bwd Packet Length Max": {
+        "2017": 976.0,
+        "2018": 976.0
+      },
+      "Total Length of Fwd Packets": {
+        "2017": 2008.0,
+        "2018": 1928.0
+      },
+      "Bwd Packets/s": {
+        "2017": 2.661433,
+        "2018": 57.750816
+      },
+      "Flow Duration": {
+        "2017": 11990970.0,
+        "2018": 374646.0
+      },
+      "Flow Packets/s": {
+        "2017": 4.442446,
+        "2018": 117.796829
+      },
+      "min_seg_size_forward": {
+        "2017": 32.0,
+        "2018": 32.0
+      },
+      "Packet Length Variance": {
+        "2017": 35944.472656,
+        "2018": 41511.660156
+      },
+      "Fwd IAT Std": {
+        "2017": 883303.0,
+        "2018": 28080.966797
+      },
+      "Fwd IAT Mean": {
+        "2017": 501451.6875,
+        "2018": 17179.787109
+      },
+      "Flow IAT Std": {
+        "2017": 622275.5,
+        "2018": 20290.433594
+      },
+      "Flow IAT Max": {
+        "2017": 2320482.0,
+        "2018": 98804.0
+      },
+      "Flow IAT Mean": {
+        "2017": 229417.515625,
+        "2018": 8686.616211
+      },
+      "Fwd Packet Length Mean": {
+        "2017": 95.619049,
+        "2018": 87.63636
+      },
+      "Total Fwd Packets": {
+        "2017": 21.0,
+        "2018": 22.0
+      },
+      "Init_Win_bytes_forward": {
+        "2017": 29200.0,
+        "2018": 26883.0
+      },
+      "Bwd IAT Total": {
+        "2017": 12000000.0,
+        "2018": 374629.5
+      },
+      "Fwd Packet Length Std": {
+        "2017": 140.045166,
+        "2018": 137.780548
+      },
+      "Flow Bytes/s": {
+        "2017": 392.495239,
+        "2018": 12272.586914
+      },
+      "Flow IAT Min": {
+        "2017": 3.0,
+        "2018": 4.0
+      },
+      "Fwd IAT Min": {
+        "2017": 361.0,
+        "2018": 236.0
+      },
+      "Bwd Packet Length Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Active Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "PSH Flag Count": {
+        "2017": 1.0,
+        "2018": 1.0
+      },
+      "Bwd IAT Std": {
+        "2017": 774309.5,
+        "2018": 36722.804688
+      },
+      "Bwd IAT Mean": {
+        "2017": 387739.03125,
+        "2018": 18143.570312
+      },
+      "Bwd IAT Min": {
+        "2017": 3.0,
+        "2018": 10.0
+      },
+      "Idle Min": {
+        "2017": 0.0,
+        "2018": 0.0
+      },
+      "Bwd IAT Max": {
+        "2017": 2320482.0,
+        "2018": 136576.5
+      }
+    }
+  },
+  "cic_ids2017_test": {
+    "stage1": {
+      "accuracy": 0.999151,
+      "precision": 0.995431,
+      "recall": 0.999609,
+      "f1": 0.997515,
+      "fpr": 0.000943,
+      "fnr": 0.000391,
+      "roc_auc": 0.999978
+    },
+    "pipeline_accuracy": 0.998853,
+    "pipeline_macro_f1": 0.953288,
+    "classes": 13,
+    "multiclass_recomputed": {
+      "accuracy": 0.998853,
+      "macro_f1": 0.953288,
+      "per_class": [
+        {
+          "class": "BENIGN",
+          "precision": 0.999862,
+          "recall": 0.99907,
+          "f1": 0.999466,
+          "support": 310867
+        },
+        {
+          "class": "Bot",
+          "precision": 0.743733,
+          "recall": 0.914384,
+          "f1": 0.820276,
+          "support": 292
+        },
+        {
+          "class": "DDoS",
+          "precision": 0.999896,
+          "recall": 0.999792,
+          "f1": 0.999844,
+          "support": 19202
+        },
+        {
+          "class": "DoS GoldenEye",
+          "precision": 0.953646,
+          "recall": 1.0,
+          "f1": 0.976273,
+          "support": 1543
+        },
+        {
+          "class": "DoS Hulk",
+          "precision": 0.998456,
+          "recall": 0.99784,
+          "f1": 0.998148,
+          "support": 25927
+        },
+        {
+          "class": "DoS Slowhttptest",
+          "precision": 0.978508,
+          "recall": 0.987245,
+          "f1": 0.982857,
+          "support": 784
+        },
+        {
+          "class": "DoS slowloris",
+          "precision": 0.994981,
+          "recall": 0.981436,
+          "f1": 0.988162,
+          "support": 808
+        },
+        {
+          "class": "FTP-Patator",
+          "precision": 0.992179,
+          "recall": 0.997753,
+          "f1": 0.994958,
+          "support": 890
+        },
+        {
+          "class": "Heartbleed",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 1
+        },
+        {
+          "class": "Infiltration",
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.666667,
+          "support": 6
+        },
+        {
+          "class": "PortScan",
+          "precision": 0.989446,
+          "recall": 0.999265,
+          "f1": 0.994331,
+          "support": 13604
+        },
+        {
+          "class": "SSH-Patator",
+          "precision": 0.995816,
+          "recall": 0.985507,
+          "f1": 0.990635,
+          "support": 483
+        },
+        {
+          "class": "Web Attack",
+          "precision": 0.990476,
+          "recall": 0.971963,
+          "f1": 0.981132,
+          "support": 321
+        }
+      ],
+      "confusion": {
+        "true": [
+          "BENIGN",
+          "Bot",
+          "DDoS",
+          "DoS GoldenEye",
+          "DoS Hulk",
+          "DoS Slowhttptest",
+          "DoS slowloris",
+          "FTP-Patator",
+          "Heartbleed",
+          "Infiltration",
+          "PortScan",
+          "SSH-Patator",
+          "Web Attack"
+        ],
+        "predicted": [
+          "BENIGN",
+          "Bot",
+          "DDoS",
+          "DoS GoldenEye",
+          "DoS Hulk",
+          "DoS Slowhttptest",
+          "DoS slowloris",
+          "FTP-Patator",
+          "Heartbleed",
+          "Infiltration",
+          "PortScan",
+          "SSH-Patator",
+          "Web Attack"
+        ],
+        "matrix": [
+          [
+            310578,
+            92,
+            1,
+            7,
+            33,
+            10,
+            0,
+            0,
+            0,
+            0,
+            145,
+            0,
+            1
+          ],
+          [
+            25,
+            267,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            19198,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1543,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            56,
+            25871,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            1,
+            2,
+            0,
+            774,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            6,
+            0,
+            7,
+            793,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            888,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            0,
+            1,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            13594,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            6,
+            0,
+            0,
+            0,
+            476,
+            0
+          ],
+          [
+            5,
+            0,
+            0,
+            3,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            312
+          ]
+        ]
+      }
+    }
+  }
+}

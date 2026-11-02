@@ -140,6 +140,65 @@ export function histogramColumns(hist, { color = SERIES.system, axisName, digits
   }
 }
 
+// Colour is the share of the true class (one hue, dark to bright), so a small class
+// reads as clearly as a big one. Each cell's text is the flow count.
+export function confusionHeatmap({ true: rows, predicted, matrix }) {
+  const totals = matrix.map((r) => r.reduce((a, b) => a + b, 0))
+  const data = matrix.flatMap((r, y) =>
+    r.map((n, x) => {
+      const share = totals[y] ? n / totals[y] : 0
+      return { value: [x, y, share, n], label: { color: share > 0.55 ? SURFACE : TEXT } }
+    }),
+  )
+  return {
+    grid: { left: 8, right: 44, top: 8, bottom: 8, containLabel: true },
+    tooltip: {
+      ...tooltip,
+      trigger: 'item',
+      formatter: (p) => {
+        const [x, y, share, n] = p.value
+        return title(`True ${rows[y]}, predicted ${predicted[x]}`) + row(p.color, `flows (${(share * 100).toFixed(1)}% of ${rows[y]})`, fmt(n))
+      },
+    },
+    visualMap: {
+      show: false,
+      min: 0,
+      max: 1,
+      dimension: 2,
+      inRange: { color: ['#10172b', '#0e4a5c', '#22d3ee'] },
+    },
+    xAxis: {
+      type: 'category',
+      data: predicted,
+      axisTick: { show: false },
+      axisLine,
+      axisLabel: { color: TEXT, fontSize: 11, rotate: 40, interval: 0 },
+    },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: rows,
+      axisTick: { show: false },
+      axisLine,
+      axisLabel: { color: TEXT, fontSize: 12 },
+    },
+    series: [
+      {
+        type: 'heatmap',
+        data,
+        itemStyle: { borderColor: SURFACE, borderWidth: 2, borderRadius: 2 },
+        emphasis: { itemStyle: { borderColor: TEXT, borderWidth: 1 } },
+        label: {
+          show: true,
+          fontFamily: MONO,
+          fontSize: 10,
+          formatter: (p) => (p.value[3] ? compact(p.value[3]) : ''),
+        },
+      },
+    ],
+  }
+}
+
 // Two dots per feature on a log axis, joined by a line. Bars would need a baseline,
 // and a log scale has no meaningful zero to grow from.
 export function featureDumbbell(rows, attackType) {

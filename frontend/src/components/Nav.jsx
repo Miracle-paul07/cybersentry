@@ -19,6 +19,8 @@ function LockIcon() {
 export default function Nav() {
   const { ready, running, jobId, job, reportsPending } = useJob()
   const reportsTotal = job?.counts.reports_total ?? 0
+  // Only a file with a Label column can be scored
+  const links = job?.has_evaluation ? [...LOCKED_LINKS, ['/evaluation', 'Model Evaluation']] : LOCKED_LINKS
   const linkClass = ({ isActive }) =>
     `rounded-full px-3 py-1.5 text-sm transition-colors ${isActive ? 'bg-cyan/10 text-cyan' : 'text-muted hover:text-text'}`
 
@@ -36,7 +38,7 @@ export default function Nav() {
             <span className="text-amber">● Live scan</span>
           </NavLink>
         )}
-        {LOCKED_LINKS.map(([to, label]) => (
+        {links.map(([to, label]) => (
           <NavLink key={to} to={to} className={linkClass} title={ready ? undefined : 'Run an analysis first'}>
             {label}
             {!ready && <LockIcon />}

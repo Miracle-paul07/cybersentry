@@ -23,6 +23,7 @@ from genai_report import grounding_check, retry_wait, template_narrative  # noqa
 
 ONLINE = "--online" in sys.argv
 DEMO = PROJECT_ROOT / "app" / "sample_data" / "demo_flows.csv"
+SAMPLE_2018 = PROJECT_ROOT / "app" / "sample_data" / "ids2018_sample.csv"
 INVENTED = "3,607,562,000"
 failures = []
 
@@ -262,6 +263,77 @@ def background_reports(client, demo, benign_csv):
     check("/reports empty", client.get(f"/api/jobs/{s['job_id']}/reports").json()["reports"] == [])
 
 
+def predictions(client, job_id):
+    rows = client.get(f"/api/jobs/{job_id}/flows.csv", params={"scope": "all"}).text
+    return pd.read_csv(io.StringIO(rows))[["row", "attack_type", "stage1_score"]]
+
+
+def evaluation_mode(client):
+    print("Evaluation mode: CSE-CIC-IDS2018 columns and the Label column")
+    sample = pd.read_csv(SAMPLE_2018, low_memory=False)
+    check("2018 sample has its original columns", "Dst Port" in sample.columns and "Label" in sample.columns)
+    check("2018 sample under 5 MB", SAMPLE_2018.stat().st_size < 5_000_000, f"{SAMPLE_2018.stat().st_size / 1e6:.2f} MB")
+
+    s, _, _ = wait(client, client.post("/api/analyze/sample/ids2018").json()["job_id"])
+    check("2018 sample scan", s["status"] == "done" and s["has_evaluation"], s["message"])
+    e = client.get(f"/api/jobs/{s['job_id']}/evaluation").json()
+    check("every row scored", e["rows"] == s["counts"]["rows_analysed"] and e["rows_excluded"] == 0, f"{e['rows']} rows")
+    check("7 classes scored", [c["class"] for c in e["multiclass"]["per_class"]] ==
+          ["BENIGN", "Bot", "DDoS", "DoS Hulk", "DoS Slowhttptest", "FTP-Patator", "SSH-Patator"])
+    matrix = e["multiclass"]["confusion"]
+    check("matrix shows all model classes", len(matrix["predicted"]) == 13 and sum(map(sum, matrix["matrix"])) == e["rows"])
+    b = e["stage1"]
+    check("binary counts add up", b["tp"] + b["fp"] + b["tn"] + b["fn"] == e["rows"])
+    check("metrics are in range", all(0 <= b[k] <= 1 for k in ("accuracy", "precision", "recall", "f1", "fpr", "fnr", "roc_auc")))
+
+    # Same rows, so the labels can't be what decides the predictions
+    base = predictions(client, s["job_id"])
+    no_label = sample.drop(columns="Label")
+    r = upload(client, "2018_no_label.csv", no_label.to_csv(index=False).encode())
+    s2, _, _ = wait(client, r.json()["job_id"])
+    check("2018 names without Label accepted", s2["status"] == "done" and not s2["has_evaluation"])
+    check("no Label: no evaluation", client.get(f"/api/jobs/{s2['job_id']}/evaluation").status_code == 404)
+    check("removing labels changes no prediction", predictions(client, s2["job_id"]).equals(base))
+    shuffled = sample.assign(Label=sample["Label"].sample(frac=1, random_state=1).to_numpy())
+    s3, _, _ = wait(client, upload(client, "2018_shuffled.csv", shuffled.to_csv(index=False).encode()).json()["job_id"])
+    check("shuffling labels changes no prediction", predictions(client, s3["job_id"]).equals(base))
+    check("shuffling labels does change the score",
+          client.get(f"/api/jobs/{s3['job_id']}/evaluation").json()["stage1"]["recall"] != b["recall"]
+          or client.get(f"/api/jobs/{s3['job_id']}/evaluation").json()["multiclass"]["accuracy"] != e["multiclass"]["accuracy"])
+    check("labels are not in the flow export", "Label" not in client.get(f"/api/jobs/{s['job_id']}/flows.csv").text.splitlines()[0])
+
+    # Labels line up after cleaning drops a row, and the repeated header row is removed
+    head = sample.head(300).astype({"Flow Duration": object})
+    head.loc[0, "Flow Duration"] = "bad"
+    stray = pd.DataFrame([dict(zip(head.columns, head.columns))])
+    data = pd.concat([head, stray, sample.iloc[300:320]]).to_csv(index=False).encode()
+    s4, _, _ = wait(client, upload(client, "2018_messy.csv", data).json()["job_id"])
+    e4 = client.get(f"/api/jobs/{s4['job_id']}/evaluation").json()
+    check("repeated header + bad row handled", s4["counts"]["rows_in"] == 320 and e4["rows"] == 319,
+          f"{s4['counts']['rows_in']} in, {e4['rows']} scored")
+    aligned = sample.drop(index=0).iloc[:299]
+    alone, _, _ = wait(client, upload(client, "2018_clean.csv", pd.concat([aligned, sample.iloc[300:320]]).to_csv(index=False).encode()).json()["job_id"])
+    e5 = client.get(f"/api/jobs/{alone['job_id']}/evaluation").json()
+    check("labels stay aligned after a dropped row", e4["multiclass"]["confusion"]["matrix"] == e5["multiclass"]["confusion"]["matrix"])
+
+    # 2017 names with 2017 labels, and labels the models have no class for
+    demo = pd.read_csv(DEMO).head(40)
+    tagged = demo.assign(Label=["BENIGN"] * 10 + ["Web Attack - XSS"] * 10 + ["DoS attacks-GoldenEye"] * 15 + [None] * 5)
+    s6, _, _ = wait(client, upload(client, "2017_labelled.csv", tagged.to_csv(index=False).encode()).json()["job_id"])
+    e6 = client.get(f"/api/jobs/{s6['job_id']}/evaluation").json()
+    check("2017 names and labels scored", e6["rows"] == 20 and {c["class"] for c in e6["multiclass"]["per_class"]} == {"BENIGN", "Web Attack"})
+    check("unknown labels reported, not guessed", e6["unmapped_labels"] == {"DoS attacks-GoldenEye": 15, "(blank)": 5}
+          and any("GoldenEye" in w for w in s6["warnings"]), str(e6["unmapped_labels"]))
+    unknown = demo.assign(Label="Nonsense")
+    s7, _, _ = wait(client, upload(client, "unknown.csv", unknown.to_csv(index=False).encode()).json()["job_id"])
+    e7 = client.get(f"/api/jobs/{s7['job_id']}/evaluation").json()
+    check("only unknown labels: nothing scored, job fine", s7["status"] == "done" and e7["rows"] == 0 and e7["multiclass"] is None)
+    only_benign = demo.assign(Label="BENIGN")
+    s8, _, _ = wait(client, upload(client, "benign.csv", only_benign.to_csv(index=False).encode()).json()["job_id"])
+    e8 = client.get(f"/api/jobs/{s8['job_id']}/evaluation").json()["stage1"]
+    check("single class: undefined metrics are empty", e8["recall"] is None and e8["roc_auc"] is None and e8["fpr"] is not None)
+
+
 def main():
     if not ONLINE:
         reports.groq_reachable = lambda timeout=2.0: False   # simulate offline demo
@@ -387,7 +459,11 @@ def main():
         r = client.post("/api/analyze/sample")
         s, _, secs = wait(client, r.json()["job_id"])
         check("sample job", s["status"] == "done", f"{secs:.1f}s")
+        check("demo dataset has no Label, so no evaluation", not s["has_evaluation"]
+              and client.get(f"/api/jobs/{s['job_id']}/evaluation").status_code == 404)
         check("/ responds", client.get("/").status_code == 200)
+
+        evaluation_mode(client)
 
     print(f"\n{'ALL PASSED' if not failures else f'{len(failures)} FAILED: {failures}'}")
     sys.exit(1 if failures else 0)

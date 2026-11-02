@@ -20,10 +20,13 @@ import pandas as pd
 from . import analysis
 from .reports import generate_reports, report_order, severity_of
 
+from ids2018 import LABEL, evaluate_upload  # noqa: E402  (src/ on sys.path via backend/__init__.py)
+
 STAGES = ["preprocess", "ml", "dl", "genai"]
 # Share of the overall progress bar each stage takes
 WEIGHTS = {"preprocess": 10, "ml": 30, "dl": 30, "genai": 30}
 MAX_JOBS = 5
+SOURCE_ROW = "_source_row"
 
 
 class Job:
@@ -42,7 +45,10 @@ class Job:
                        "threats_by_type": {}, "reports_done": 0, "reports_total": 0}
         self.stages = {s: {"status": "pending", "started_at": None, "seconds": None} for s in STAGES}
         self.lock = threading.Lock()
-        self.input_df = df
+        # A Label column is taken out here, so the pipeline can't see it. It is only used for scoring.
+        self.labels = df[LABEL].reset_index(drop=True) if LABEL in df.columns else None
+        self.input_df = df.drop(columns=LABEL, errors="ignore")
+        self.evaluation = None
         self.results = None
         self.cleaning = None
         self.summary = None
@@ -62,7 +68,7 @@ class Job:
         with self.lock:
             return analysis.clean({
                 "job_id": self.id, "filename": self.filename, "status": self.status,
-                "results_ready": self.results_ready,
+                "results_ready": self.results_ready, "has_evaluation": self.evaluation is not None,
                 "stage": self.stage, "stage_percent": round(self.stage_percent, 1),
                 "percent": self.percent, "message": self.message, "error": self.error,
                 "warnings": list(self.warnings), "stages": {k: dict(v) for k, v in self.stages.items()},
@@ -172,11 +178,26 @@ class JobManager:
         with job.lock:
             job.status, job.stage, job.message = "done", "done", "Analysis complete"
 
+    def _score(self, job, results, source_rows):
+        # Scoring is an extra: the scan's own results must survive it failing
+        try:
+            job.evaluation = analysis.clean(evaluate_upload(job.labels.iloc[source_rows], results, self.pipeline.classes))
+        except Exception as e:
+            print(f"[evaluation] could not score the labels: {e}", flush=True)
+            job.add_warning("The Label column could not be used, so the Model Evaluation page is not available.")
+            return
+        unmapped = job.evaluation["unmapped_labels"]
+        if unmapped:
+            names = ", ".join(f"{name} ({count:,})" for name, count in unmapped.items())
+            job.add_warning(f"Model Evaluation leaves out rows with labels the models have no class for: {names}.")
+
     def _analyse(self, job):
         pipe = self.pipeline
 
         job.start_stage("preprocess", "Cleaning and validating flow records")
-        clean_df, cleaning = pipe.prepare(job.input_df)
+        # Cleaning can drop rows, so remember where each one came from to line the labels up again
+        clean_df, cleaning = pipe.prepare(job.input_df.assign(**{SOURCE_ROW: range(len(job.input_df))}))
+        source_rows = clean_df.pop(SOURCE_ROW).to_numpy()
         if clean_df.empty:
             raise ValueError("No valid rows remain after cleaning the uploaded CSV "
                              f"({cleaning['rows_dropped_invalid']} rows had missing or non-numeric values).")
@@ -214,6 +235,8 @@ class JobManager:
 
         job.results = results
         job.summary = analysis.summary(results, cleaning, job.filename)
+        if job.labels is not None:
+            self._score(job, results, source_rows)
 
         order = report_order(results)
         job.start_stage("genai", "Writing incident reports" if order else "No threats found, no reports needed")

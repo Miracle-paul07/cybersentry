@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as echarts from 'echarts/core'
-import { BarChart, CustomChart, PieChart, ScatterChart } from 'echarts/charts'
-import { AriaComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
+import { BarChart, CustomChart, HeatmapChart, PieChart, ScatterChart } from 'echarts/charts'
+import { AriaComponent, GridComponent, LegendComponent, TooltipComponent, VisualMapComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { RISK_COLORS } from '../risk'
 import { setChartHint } from './fx'
@@ -9,12 +9,14 @@ import { setChartHint } from './fx'
 echarts.use([
   BarChart,
   CustomChart,
+  HeatmapChart,
   PieChart,
   ScatterChart,
   AriaComponent,
   GridComponent,
   LegendComponent,
   TooltipComponent,
+  VisualMapComponent,
   CanvasRenderer,
 ])
 

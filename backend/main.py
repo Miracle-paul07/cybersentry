@@ -23,12 +23,14 @@ from . import PROJECT_ROOT, analysis
 from .jobs import JobManager
 from .reports import export, groq_reachable
 
-from pipeline import CyberSentryPipeline  # noqa: E402  (src/ on sys.path via backend/__init__.py)
+from ids2018 import normalise_upload  # noqa: E402  (src/ on sys.path via backend/__init__.py)
+from pipeline import CyberSentryPipeline  # noqa: E402
 
 load_dotenv(PROJECT_ROOT / ".env")
 
 MAX_UPLOAD_MB = 20
 SAMPLE_CSV = PROJECT_ROOT / "app" / "sample_data" / "demo_flows.csv"
+SAMPLE_2018_CSV = PROJECT_ROOT / "app" / "sample_data" / "ids2018_sample.csv"
 DIST = PROJECT_ROOT / "frontend" / "dist"
 
 state = {}
@@ -67,12 +69,13 @@ def read_upload(filename, data):
     except (pd.errors.ParserError, pd.errors.EmptyDataError, UnicodeDecodeError) as e:
         bad_request(f"Could not read this CSV: {e}")
     df.columns = df.columns.str.strip()
+    df = normalise_upload(df)
     if df.empty:
         bad_request("The uploaded CSV contains no rows.")
     missing = [c for c in state["pipeline"].required_features if c not in df.columns]
     if missing:
         bad_request(f"The CSV is missing {len(missing)} required column(s). Upload a CICFlowMeter-format "
-                    "CSV (same columns as CIC-IDS2017).", missing_columns=missing)
+                    "CSV (same columns as CIC-IDS2017 or CSE-CIC-IDS2018).", missing_columns=missing)
     return df
 
 
@@ -127,11 +130,20 @@ async def analyze(file: UploadFile = File(...)):
     return {"job_id": job.id}
 
 
+def analyze_file(path):
+    df = read_upload(path.name, path.read_bytes())
+    job = state["jobs"].submit(path.name, df)
+    return {"job_id": job.id}
+
+
 @app.post("/api/analyze/sample")
 def analyze_sample():
-    df = read_upload(SAMPLE_CSV.name, SAMPLE_CSV.read_bytes())
-    job = state["jobs"].submit(SAMPLE_CSV.name, df)
-    return {"job_id": job.id}
+    return analyze_file(SAMPLE_CSV)
+
+
+@app.post("/api/analyze/sample/ids2018")
+def analyze_sample_2018():
+    return analyze_file(SAMPLE_2018_CSV)
 
 
 @app.get("/api/jobs/{job_id}")
@@ -176,6 +188,14 @@ def job_attack_analysis(job_id: str, attack_type: str):
     if not (job.results["attack_type"] == attack_type).any() or attack_type == "BENIGN":
         bad_request(f"No flows were classified as '{attack_type}'.", status=404)
     return analysis.attack_analysis(job.results, attack_type, state["pipeline"].required_features)
+
+
+@app.get("/api/jobs/{job_id}/evaluation")
+def job_evaluation(job_id: str):
+    job = get_job(job_id)
+    if job.evaluation is None:
+        bad_request("This file has no usable Label column, so there is nothing to score against.", status=404)
+    return {"filename": job.filename, **job.evaluation}
 
 
 @app.get("/api/jobs/{job_id}/reports")

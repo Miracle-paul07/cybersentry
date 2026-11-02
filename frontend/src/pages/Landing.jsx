@@ -11,6 +11,8 @@ const NetworkScene = lazy(() => import('../components/NetworkScene'))
 const MAX_MB = 20
 const TITLE = 'CyberSentry'
 const TAGLINE = ['Detect.', 'Understand.', 'Respond.']
+const SAMPLE_BUTTON =
+  'rounded-full border border-cyan/60 bg-cyan/10 px-6 py-2.5 text-sm font-semibold text-cyan transition hover:bg-cyan/20 hover:shadow-[0_0_24px_rgb(34_211_238/0.35)] disabled:opacity-50'
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -150,15 +152,15 @@ export default function Landing() {
           />
         </div>
 
-        <div className="hero-rest mt-6">
+        <div className="hero-rest mt-6 flex flex-wrap items-center justify-center gap-3">
           <Magnetic>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => start(api.analyzeSample)}
-              className="rounded-full border border-cyan/60 bg-cyan/10 px-6 py-2.5 text-sm font-semibold text-cyan transition hover:bg-cyan/20 hover:shadow-[0_0_24px_rgb(34_211_238/0.35)] disabled:opacity-50"
-            >
+            <button type="button" disabled={busy} onClick={() => start(api.analyzeSample)} className={SAMPLE_BUTTON}>
               Try the demo dataset
+            </button>
+          </Magnetic>
+          <Magnetic>
+            <button type="button" disabled={busy} onClick={() => start(api.analyzeSample2018)} className={SAMPLE_BUTTON}>
+              Try the CIC-IDS2018 sample
             </button>
           </Magnetic>
         </div>

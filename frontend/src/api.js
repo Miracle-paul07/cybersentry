@@ -42,11 +42,13 @@ export const api = {
     return request('/api/analyze', { method: 'POST', body })
   },
   analyzeSample: () => request('/api/analyze/sample', { method: 'POST' }),
+  analyzeSample2018: () => request('/api/analyze/sample/ids2018', { method: 'POST' }),
   job: (id) => request(`/api/jobs/${id}`),
   results: (id, params) => request(`/api/jobs/${id}/results${query(params)}`),
   flow: (id, row) => request(`/api/jobs/${id}/flows/${row}`),
   attacks: (id) => request(`/api/jobs/${id}/analysis`),
   attack: (id, type) => request(`/api/jobs/${id}/analysis/${enc(type)}`),
+  evaluation: (id) => request(`/api/jobs/${id}/evaluation`),
   report: (id, type) => request(`/api/jobs/${id}/reports/${enc(type)}`),
 }
 

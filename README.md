@@ -17,7 +17,7 @@ It starts the server and opens the website at <http://127.0.0.1:8000>. Press Ctr
 - `run.bat --rebuild` rebuilds the website first. Use this after changing anything in `frontend/`.
 - `run.bat --port 8001` uses another port if 8000 is taken.
 
-Click **Try the demo dataset** on the upload page for a quick run, or upload your own CICFlowMeter-format CSV (same columns as CIC-IDS2017, up to 20 MB).
+Click **Try the demo dataset** on the upload page for a quick run, **Try the CIC-IDS2018 sample** to see the models scored on data from another dataset, or upload your own CICFlowMeter-format CSV (CIC-IDS2017 or CSE-CIC-IDS2018 column names, up to 20 MB). If the file has a `Label` column, a Model Evaluation page appears. The models never see the labels.
 
 ## First-time setup
 
@@ -66,6 +66,16 @@ venv\Scripts\python -m backend.test_api
 
 This uses a fake Groq client for the background report tests, so it spends no quota. Add `--online` to also run the main demo scan with real Groq calls (several minutes).
 
+## Cross-dataset evaluation
+
+The models trained on CIC-IDS2017 are also tested, without retraining, on CSE-CIC-IDS2018. Put the CSVs in `data/raw/ids2018/`, then run:
+
+```bash
+venv\Scripts\python -m backend.evaluate_ids2018
+```
+
+Results are in [reports/ids2018/](reports/ids2018/). Start with [summary.md](reports/ids2018/summary.md).
+
 ## Streamlit backup
 
 The original Streamlit dashboard still works as a fallback:
@@ -83,4 +93,10 @@ venv\Scripts\streamlit run app/app.py
 - `models/` - trained models
 - `notebooks/` - Colab/Jupyter experiments
 - `data/raw/`, `data/processed/` - datasets (not committed). Download CIC-IDS2017 (CSV version) into `data/raw/`.
+- `reports/ids2018/` - cross-dataset evaluation results
 - `run.bat` - starts everything
+
+## Datasets
+
+- CIC-IDS2017, used for training and testing.
+- CSE-CIC-IDS2018, used for evaluation only. Sharafaldin, Lashkari & Ghorbani, "Toward Generating a New Intrusion Detection Dataset and Intrusion Traffic Characterization", ICISSP 2018. <https://registry.opendata.aws/cse-cic-ids2018>

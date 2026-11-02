@@ -14,6 +14,7 @@ const Overview = lazy(() => import('./pages/Overview'))
 const Detection = lazy(() => import('./pages/Detection'))
 const Analysis = lazy(() => import('./pages/Analysis'))
 const Reports = lazy(() => import('./pages/Reports'))
+const Evaluation = lazy(() => import('./pages/Evaluation'))
 
 export default function App() {
   const location = useLocation()
@@ -61,6 +62,7 @@ export default function App() {
                 <Route path="/detection" element={<Locked><Detection /></Locked>} />
                 <Route path="/analysis/:type?" element={<Locked><Analysis /></Locked>} />
                 <Route path="/reports/:type?" element={<Locked><Reports /></Locked>} />
+                <Route path="/evaluation" element={<Locked><Evaluation /></Locked>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
