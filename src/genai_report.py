@@ -237,7 +237,7 @@ def retry_wait(err, attempt):
     return (20 if is_rate_limit(err) else 2) * (attempt + 1)
 
 
-def call_groq(evidence, model=DEFAULT_MODEL, client=None, retries=3):
+def call_groq(evidence, model=DEFAULT_MODEL, client=None, retries=3, correction=None):
     """Ask the LLM to narrate the evidence. Returns a dict matching NARRATIVE_SCHEMA."""
     if client is None:
         from groq import Groq
@@ -245,6 +245,8 @@ def call_groq(evidence, model=DEFAULT_MODEL, client=None, retries=3):
         client = Groq(api_key=os.environ["GROQ_API_KEY"], max_retries=0)
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": "EVIDENCE:\n" + json.dumps(evidence, indent=2)}]
+    if correction:
+        messages.append({"role": "user", "content": correction})
     # gpt-oss spends about 1,300 hidden reasoning tokens per report by default. Narrating given
     # evidence doesn't need them, and they can use up the output limit before the JSON is finished.
     extra = {"reasoning_effort": "low"} if "gpt-oss" in model else {}
@@ -368,6 +370,24 @@ def render_markdown(evidence, narrative, check, source):
     return "\n".join(lines)
 
 
+def rewrite_if_ungrounded(narrative, check, evidence, model, client):
+    """One more LLM try when the grounding check flags numbers. Returns the better (narrative, check)."""
+    print(f"[genai] {evidence['attack_type']}: numbers not in the evidence "
+          f"({', '.join(check['unsupported_numbers'])}), asking for one rewrite", flush=True)
+    correction = ("Your previous answer used these numbers, which are not in the EVIDENCE: "
+                  f"{', '.join(check['unsupported_numbers'])}. Write the report again, copying every number "
+                  "exactly from the EVIDENCE and calculating nothing.")
+    try:
+        new_narrative = call_groq(evidence, model=model, client=client, correction=correction)
+    except Exception as e:
+        print(f"[genai] Rewrite failed, keeping the flagged report: {e}", flush=True)
+        return narrative, check
+    new_check = grounding_check(new_narrative, evidence)
+    if len(new_check["unsupported_numbers"]) < len(check["unsupported_numbers"]):
+        return new_narrative, new_check
+    return narrative, check
+
+
 def generate_report(evidence, use_llm=True, model=DEFAULT_MODEL, client=None):
     """Evidence -> (markdown report, narrative dict, grounding check, source)."""
     source = "template (no LLM)"
@@ -381,4 +401,6 @@ def generate_report(evidence, use_llm=True, model=DEFAULT_MODEL, client=None):
     if narrative is None:
         narrative = template_narrative(evidence)
     check = grounding_check(narrative, evidence)
+    if not check["grounded"] and not source.startswith("template"):
+        narrative, check = rewrite_if_ungrounded(narrative, check, evidence, model, client)
     return render_markdown(evidence, narrative, check, source), narrative, check, source

@@ -23,6 +23,7 @@ from genai_report import grounding_check, retry_wait, template_narrative  # noqa
 
 ONLINE = "--online" in sys.argv
 DEMO = PROJECT_ROOT / "app" / "sample_data" / "demo_flows.csv"
+INVENTED = "3,607,562,000"
 failures = []
 
 
@@ -68,8 +69,10 @@ class RateLimited(Exception):
 class FakeGroq:
     """Stands in for the Groq client, so the real retry and fallback code runs without using quota."""
 
-    def __init__(self, gated=False, error_for=lambda attack: None):
+    def __init__(self, gated=False, error_for=lambda attack: None, wrong_number=lambda attack, nth: False):
         self.calls = []
+        self.corrections = []
+        self.wrong_number = wrong_number   # should this attack type's nth answer contain an invented number?
         self.options = {}
         self.permits = threading.Semaphore(0) if gated else None   # gated: each call waits for release()
         self.error_for = error_for
@@ -82,13 +85,17 @@ class FakeGroq:
     def create(self, model, messages, **kwargs):
         evidence = json.loads(messages[1]["content"].split("EVIDENCE:\n", 1)[1])
         self.calls.append(evidence["attack_type"])
+        self.corrections += [m["content"] for m in messages[2:]]
         self.options = kwargs
         if self.permits:
             self.permits.acquire(timeout=60)
         error = self.error_for(evidence["attack_type"])
         if error:
             raise error
-        content = json.dumps(template_narrative(evidence))
+        narrative = template_narrative(evidence)
+        if self.wrong_number(evidence["attack_type"], self.calls.count(evidence["attack_type"])):
+            narrative["summary"] += f" {INVENTED} flows were seen."
+        content = json.dumps(narrative)
         return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
 
 
@@ -190,6 +197,34 @@ def background_reports(client, demo, benign_csv):
         s, _, _ = wait(client, scan())
         check("other errors: 3 tries then template", fake.calls.count(first) == 3 and s["reports"][0]["status"] == "failed",
               f"{fake.calls.count(first)} tries")
+
+    print("Invented numbers")
+
+    def first_report(job_id):
+        return client.get(f"/api/jobs/{job_id}/reports/{first}").json()
+
+    with fake_groq(FakeGroq(wrong_number=lambda a, nth: a == first and nth == 1)) as fake:
+        s, _, _ = wait(client, scan())
+        j = first_report(s["job_id"])
+        check("flagged number: one rewrite, clean report kept", fake.calls.count(first) == 2 and j["grounding"]["grounded"]
+              and INVENTED not in json.dumps(j["narrative"]) and INVENTED not in j["markdown"],
+              f"{fake.calls.count(first)} calls")
+        check("rewrite names the bad number", len(fake.corrections) == 1 and INVENTED in fake.corrections[0])
+        check("clean reports get no rewrite", len(fake.calls) == len(order) + 1, f"{len(fake.calls)} calls")
+
+    with fake_groq(FakeGroq(wrong_number=lambda a, nth: a == first)) as fake:
+        s, _, _ = wait(client, scan())
+        j = first_report(s["job_id"])
+        check("still wrong: no third try, warning stays", fake.calls.count(first) == 2 and s["reports"][0]["status"] == "ready"
+              and j["grounding"]["unsupported_numbers"] == [INVENTED], f"{fake.calls.count(first)} calls")
+
+    errors = iter([None, RateLimited("3600")])
+    with fake_groq(FakeGroq(error_for=lambda a: next(errors, None) if a == first else None,
+                            wrong_number=lambda a, nth: a == first)) as fake:
+        s, _, _ = wait(client, scan())
+        j = first_report(s["job_id"])
+        check("rewrite fails: flagged AI report kept, no template", s["reports"][0]["status"] == "ready"
+              and s["reports"][0]["source"].startswith("Groq") and j["grounding"]["unsupported_numbers"] == [INVENTED])
 
     real = reports.generate_report
 
