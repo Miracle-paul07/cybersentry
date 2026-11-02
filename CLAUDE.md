@@ -7,6 +7,7 @@ Cybersecurity threat analysis prototype. College mini-project, 3-member team, 30
 A FastAPI backend (`backend/`) runs the pipeline and serves a React website (`frontend/`, built to `frontend/dist`).
 
 - `run.bat` starts everything at <http://127.0.0.1:8000>. Use `run.bat --rebuild` after changing anything in `frontend/`, and `run.bat --port 8001` if the port is taken.
+- Result pages stay locked until a scan is started in the current visit. The job ID lives in `sessionStorage` and is cleared by a fresh load of the landing page, or when the server no longer knows the job (`frontend/src/JobContext.jsx`).
 - The Streamlit dashboard (`app/app.py`) is kept as a backup. The backend reuses `app/risk.py` and `app/report_export.py`.
 - Tests: `venv\Scripts\python -m backend.test_api`. They use a fake Groq client, so they spend no quota; add `--online` for real Groq calls on the main demo scan.
 

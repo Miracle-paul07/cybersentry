@@ -5,6 +5,7 @@ export default function RiskBadge({ level }) {
   const color = RISK_COLORS[level] ?? '#8a94b3'
   return (
     <span
+      data-threat={level === 'Critical' || undefined}
       className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap"
       style={{ borderColor: `${color}66`, background: `${color}1a` }}
     >

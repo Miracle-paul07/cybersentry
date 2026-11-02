@@ -3,6 +3,8 @@ import * as echarts from 'echarts/core'
 import { BarChart, CustomChart, PieChart, ScatterChart } from 'echarts/charts'
 import { AriaComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+import { RISK_COLORS } from '../risk'
+import { setChartHint } from './fx'
 
 echarts.use([
   BarChart,
@@ -31,6 +33,7 @@ export default function EChart({ option, height = 280, onClick, label }) {
     return () => {
       observer.disconnect()
       c.dispose()
+      setChartHint(null)
     }
   }, [])
 
@@ -56,6 +59,12 @@ export default function EChart({ option, height = 280, onClick, label }) {
     const c = chart.current
     c.off('click')
     if (onClick) c.on('click', onClick)
+    c.off('mouseover')
+    c.off('mouseout')
+    c.off('globalout')
+    c.on('mouseover', (p) => setChartHint({ label: 'INSPECT', active: Boolean(onClick), threat: p.color === RISK_COLORS.Critical }))
+    c.on('mouseout', () => setChartHint(null))
+    c.on('globalout', () => setChartHint(null))
   }, [onClick])
 
   return <div ref={el} role="img" aria-label={label} style={{ height }} className="w-full" />

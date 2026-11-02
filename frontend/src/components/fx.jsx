@@ -29,44 +29,126 @@ export function scrollToTop() {
   else window.scrollTo(0, 0)
 }
 
+const NATIVE_CURSOR = 'input:not([type="checkbox"], [type="radio"], [type="file"]), select, textarea'
+const CLICKABLE = 'a, button, label, input, [role="button"], tr[tabindex]'
+const LABEL_ROOM = 200 // px; closer to the right edge than this, the label flips left
+
+// What the reticle should show over an element. Pages tag elements with data-cursor
+// (label) and data-threat (turns it red); the rest follows from the element itself.
+function reticleFor(el) {
+  if (el.closest(NATIVE_CURSOR)) return { native: true }
+  const threat = Boolean(el.closest('[data-threat]'))
+  const hit = el.closest(CLICKABLE)
+  if (hit?.matches(':disabled, [aria-disabled="true"]')) return { threat }
+  if (hit) {
+    const named = hit.matches('a, button, [role="button"]') ? 'OPEN' : ''
+    const label = hit.dataset.cursor ?? (hit.matches('[download]') ? 'DOWNLOAD' : hit.matches('tr') ? 'INSPECT' : named)
+    return { active: true, threat, label }
+  }
+  if (el.closest('tbody tr') && !el.closest('td[colspan]')) return { threat, label: 'INSPECT' }
+  return { threat, label: el.closest('[data-cursor]')?.dataset.cursor ?? '' }
+}
+
+// Charts draw on a canvas, so they report what's under the pointer themselves
+let chartHint = () => {}
+export const setChartHint = (hint) => chartHint(hint)
+
+// Targeting reticle in place of the system cursor. Only position goes through GSAP;
+// its states are attributes styled in CSS, so nothing here re-renders React.
 export function Cursor() {
+  const root = useRef(null)
   const dot = useRef(null)
   const ring = useRef(null)
+  const label = useRef(null)
 
   useEffect(() => {
     if (!pointerFx()) return
+    const node = root.current
     const moveDot = { x: gsap.quickTo(dot.current, 'x', { duration: 0.08 }), y: gsap.quickTo(dot.current, 'y', { duration: 0.08 }) }
     const moveRing = { x: gsap.quickTo(ring.current, 'x', { duration: 0.35 }), y: gsap.quickTo(ring.current, 'y', { duration: 0.35 }) }
-    const show = (opacity) => gsap.to([dot.current, ring.current], { opacity, duration: 0.2, overwrite: 'auto' })
+    let shown = false
+    let over = {}
+    let hint = null
+    document.documentElement.classList.add('has-reticle')
 
-    const onMove = (e) => {
-      if (Number(gsap.getProperty(dot.current, 'opacity')) === 0) show(1)
-      moveDot.x(e.clientX)
-      moveDot.y(e.clientY)
-      moveRing.x(e.clientX)
-      moveRing.y(e.clientY)
+    const paint = () => {
+      const s = hint ?? over
+      node.toggleAttribute('data-native', Boolean(s.native))
+      node.toggleAttribute('data-active', Boolean(s.active))
+      node.toggleAttribute('data-threat', Boolean(s.threat))
+      if (label.current.textContent !== (s.label ?? '')) label.current.textContent = s.label ?? ''
     }
+    const place = (x, y) => {
+      // Coming back into the window starts at the pointer instead of flying in from the old spot
+      const from = (v) => (shown ? undefined : v)
+      moveDot.x(x, from(x))
+      moveDot.y(y, from(y))
+      moveRing.x(x, from(x))
+      moveRing.y(y, from(y))
+      shown = true
+      node.toggleAttribute('data-visible', true)
+      node.toggleAttribute('data-flip', x > window.innerWidth - LABEL_ROOM)
+    }
+    const read = (target) => {
+      if (target.tagName !== 'CANVAS') hint = null
+      over = reticleFor(target)
+      paint()
+    }
+
+    const onMove = (e) => e.pointerType !== 'touch' && place(e.clientX, e.clientY)
     const onOver = (e) => {
-      const active = e.target.closest?.('a, button, select, input, label, [role="button"], tr[tabindex]')
-      gsap.to(ring.current, { scale: active ? 1.6 : 1, duration: 0.25, overwrite: 'auto' })
+      if (e.pointerType === 'touch') return
+      place(e.clientX, e.clientY)
+      read(e.target)
     }
-    const onLeave = () => show(0)
+    const onDown = (e) => {
+      if (e.pointerType === 'touch') return
+      place(e.clientX, e.clientY)
+      node.toggleAttribute('data-pressed', true)
+    }
+    const onUp = () => node.toggleAttribute('data-pressed', false)
+    const onLeave = () => {
+      shown = false
+      node.toggleAttribute('data-visible', false)
+    }
+    chartHint = (next) => {
+      hint = next
+      paint()
+    }
 
     window.addEventListener('pointermove', onMove, { passive: true })
+    window.addEventListener('pointerdown', onDown, { passive: true })
+    window.addEventListener('pointerup', onUp, { passive: true })
+    window.addEventListener('pointercancel', onUp, { passive: true })
+    window.addEventListener('dragover', onOver, { passive: true }) // a file dragged in sends no pointer events
     document.addEventListener('pointerover', onOver, { passive: true })
     document.documentElement.addEventListener('pointerleave', onLeave)
     return () => {
+      chartHint = () => {}
+      document.documentElement.classList.remove('has-reticle')
       window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      window.removeEventListener('dragover', onOver)
       document.removeEventListener('pointerover', onOver)
       document.documentElement.removeEventListener('pointerleave', onLeave)
     }
   }, [])
 
   return (
-    <>
-      <div ref={ring} className="cursor-ring" aria-hidden="true" />
-      <div ref={dot} className="cursor-dot" aria-hidden="true" />
-    </>
+    <div ref={root} className="reticle" aria-hidden="true">
+      <div ref={ring} className="reticle-anchor">
+        <svg viewBox="0 0 44 44" className="reticle-ring" fill="none" stroke="currentColor">
+          <circle cx="22" cy="22" r="13" />
+          <path d="M22 3v6M22 35v6M3 22h6M35 22h6" />
+        </svg>
+      </div>
+      <div ref={dot} className="reticle-anchor">
+        <span className="reticle-dot" />
+        <span ref={label} className="reticle-label" />
+      </div>
+    </div>
   )
 }
 

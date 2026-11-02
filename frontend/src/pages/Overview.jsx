@@ -51,6 +51,7 @@ export default function Overview() {
 
       <div
         role="status"
+        data-threat={threats || undefined}
         className={`mb-4 flex flex-wrap items-center gap-3 rounded-xl border p-4 ${
           threats ? 'pulse-red border-red/60 bg-red/10' : 'border-cyan/50 bg-cyan/10 shadow-[0_0_24px_rgb(34_211_238/0.12)]'
         }`}
@@ -88,7 +89,7 @@ export default function Overview() {
             {RISK_LEVELS.map((level) => {
               const n = data.risk_counts[level]
               return (
-                <li key={level} className="flex items-center gap-2 text-sm">
+                <li key={level} data-threat={level === 'Critical' || undefined} className="flex items-center gap-2 text-sm">
                   <span className="h-2.5 w-2.5 rounded-sm" style={{ background: RISK_COLORS[level] }} />
                   <span>{level}</span>
                   <span className="num ml-auto">{fmt(n)}</span>

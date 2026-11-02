@@ -53,15 +53,11 @@ const STAGES = [
 export default function Scan() {
   const { jobId } = useParams()
   const navigate = useNavigate()
-  const { job, setJobId, jobId: currentId, lostJob, pollError } = useJob()
+  const { job, jobId: currentId, lostJob, pollError } = useJob()
   const [shown, setShown] = useState(0) // stages displayed as finished
   const lastAdvance = useRef(Date.now())
 
-  // Opening a scan link directly makes that job the current one
   const lost = lostJob === jobId
-  useEffect(() => {
-    if (jobId !== currentId && !lost) setJobId(jobId)
-  }, [jobId, currentId, lost, setJobId])
 
   const snap = job?.job_id === jobId ? job : null
 
@@ -101,11 +97,14 @@ export default function Scan() {
         return sum
       }, 0)
 
-  if (lost) {
+  // A scan link from an earlier visit must not unlock the results again
+  if (lost || jobId !== currentId) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-16">
         <p role="alert" className="text-red-soft">
-          This analysis no longer exists. It may have been lost when the server restarted.
+          {lost
+            ? 'This analysis no longer exists. It may have been lost when the server restarted.'
+            : 'This scan belongs to an earlier visit. Start a new scan to see results.'}
         </p>
         <Link to="/" className="mt-4 inline-block text-cyan underline">
           Back to upload
@@ -205,7 +204,7 @@ export default function Scan() {
 
       {shown >= 2 && threatTypes.length > 0 && (
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <div className="glass rounded-xl p-5">
+          <div className="glass rounded-xl p-5" data-threat>
             <h2 className="font-semibold">Threat feed</h2>
             <ul className="mt-3 space-y-1.5 text-sm">
               {threatTypes.map(([type, count]) => (

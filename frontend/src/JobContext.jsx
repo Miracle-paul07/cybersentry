@@ -1,20 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { api } from './api'
 
-// The current analysis job. Its id is remembered in localStorage so a page
-// refresh keeps the results (until the server restarts). Status is polled here,
-// not on the scan page, so a job that finishes while you're on another page still
-// unlocks the results. Polling carries on after results unlock, slower, because the
-// incident reports keep arriving in the background.
+// The current analysis job. Its id lasts for this visit only: it is kept in
+// sessionStorage so refreshing a result page keeps the results, and it is forgotten
+// when the site is loaded fresh at the landing page or in a new tab. Status is polled
+// here, not on the scan page, so a job that finishes while you're on another page
+// still unlocks the results. Polling carries on after results unlock, slower, because
+// the incident reports keep arriving in the background, and after the job ends, so a
+// server restart locks the pages again.
 const KEY = 'cybersentry.jobId'
 const POLL_MS = 400
 const REPORTS_POLL_MS = 1500
+const FINISHED_POLL_MS = 5000
 const RETRY_MS = 2000
 const JobContext = createContext(null)
 
 function readStored() {
   try {
-    return localStorage.getItem(KEY)
+    return sessionStorage.getItem(KEY)
   } catch {
     return null
   }
@@ -22,12 +25,19 @@ function readStored() {
 
 function store(id) {
   try {
-    if (id) localStorage.setItem(KEY, id)
-    else localStorage.removeItem(KEY)
+    if (id) sessionStorage.setItem(KEY, id)
+    else sessionStorage.removeItem(KEY)
   } catch {
     // storage blocked: the job just won't survive a refresh
   }
 }
+
+try {
+  localStorage.removeItem(KEY) // older versions kept the job across visits
+} catch {
+  // storage blocked: there is nothing to remove
+}
+if (window.location.pathname === '/') store(null)
 
 export function JobProvider({ children }) {
   const [jobId, setJobIdState] = useState(readStored)
@@ -54,9 +64,8 @@ export function JobProvider({ children }) {
         setJob(s)
         setPollError(null)
         setChecking(false)
-        if (s.status !== 'done' && s.status !== 'error') {
-          timer = setTimeout(poll, s.results_ready ? REPORTS_POLL_MS : POLL_MS)
-        }
+        const finished = s.status === 'done' || s.status === 'error'
+        timer = setTimeout(poll, finished ? FINISHED_POLL_MS : s.results_ready ? REPORTS_POLL_MS : POLL_MS)
       } catch (e) {
         if (cancelled) return
         setChecking(false)

@@ -203,6 +203,7 @@ export default function Detection() {
               <Fragment key={r.row}>
                 <tr
                   tabIndex={0}
+                  data-threat={r.risk_level === 'Critical' || undefined}
                   aria-expanded={openRow === r.row}
                   onClick={() => setOpenRow(openRow === r.row ? null : r.row)}
                   onKeyDown={(e) => {

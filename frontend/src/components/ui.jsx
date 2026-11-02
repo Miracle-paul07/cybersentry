@@ -26,7 +26,7 @@ export function Panel({ title, note, children, className = '' }) {
 // A number value counts up; pass `format` for anything that isn't a plain count
 export function Stat({ label, value, format, tone = 'text-text' }) {
   return (
-    <TiltCard className="glass rounded-xl p-4">
+    <TiltCard className="glass rounded-xl p-4" data-threat={tone === 'text-red-soft' || undefined}>
       <p className="text-xs tracking-wider text-muted uppercase">{label}</p>
       <p className={`num mt-2 text-2xl font-semibold sm:text-3xl ${tone}`}>
         {typeof value === 'number' ? <CountUp value={value} format={format} /> : value}

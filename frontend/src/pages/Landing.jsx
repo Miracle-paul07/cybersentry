@@ -85,7 +85,7 @@ export default function Landing() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgb(5_7_15/0.82)_0%,rgb(5_7_15/0.45)_42%,transparent_72%)]" />
       </div>
 
-      <div className="relative z-10 flex min-h-[calc(100svh-57px)] flex-col items-center justify-center px-4 py-10 text-center">
+      <div data-cursor="UPLOAD TO BEGIN" className="relative z-10 flex min-h-[calc(100svh-57px)] flex-col items-center justify-center px-4 py-10 text-center">
         <p className="hero-rest num text-xs tracking-[0.3em] text-cyan uppercase">Network threat analysis</p>
 
         <h1
@@ -112,6 +112,7 @@ export default function Landing() {
           tabIndex={0}
           aria-disabled={busy}
           aria-label="Upload a CSV file of network flows"
+          data-cursor="DROP CSV"
           data-dragging={dragging}
           onClick={() => !busy && input.current.click()}
           onKeyDown={(e) => {

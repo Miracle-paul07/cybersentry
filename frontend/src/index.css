@@ -114,32 +114,113 @@ body {
   opacity: 1;
 }
 
-/* Glowing cursor follower. The normal pointer stays visible. */
-.cursor-dot,
-.cursor-ring {
+/* Targeting reticle. The has-reticle class is only added for a mouse without reduced
+   motion, and !important is needed to beat Tailwind's cursor utilities and the inline
+   cursor ECharts sets on its canvas. */
+html.has-reticle,
+html.has-reticle * {
+  cursor: none !important;
+}
+
+html.has-reticle :is(input:not([type="checkbox"], [type="radio"], [type="file"]), textarea) {
+  cursor: text !important;
+}
+
+html.has-reticle select {
+  cursor: pointer !important;
+}
+
+.reticle {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 60;
-  border-radius: 9999px;
+  z-index: 10000000; /* above the ECharts tooltip */
+  color: var(--color-cyan);
   pointer-events: none;
   opacity: 0;
+  transition: opacity 0.15s, color 0.2s;
 }
 
-.cursor-dot {
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  background: var(--color-cyan);
-  box-shadow: 0 0 12px 3px rgb(34 211 238 / 0.7);
+.reticle[data-visible]:not([data-native]) {
+  opacity: 1;
 }
 
-.cursor-ring {
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
-  border: 1px solid rgb(34 211 238 / 0.55);
-  box-shadow: 0 0 18px rgb(34 211 238 / 0.25);
+.reticle[data-threat] {
+  color: var(--color-red);
+}
+
+.reticle-anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.reticle-ring {
+  position: absolute;
+  top: -22px;
+  left: -22px;
+  width: 44px;
+  height: 44px;
+  overflow: visible;
+  /* The dark edge keeps a red reticle visible over red chart marks */
+  filter: drop-shadow(0 0 1px var(--color-ink)) drop-shadow(0 0 1px var(--color-ink)) drop-shadow(0 0 4px currentColor);
+  transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+.reticle-ring * {
+  vector-effect: non-scaling-stroke;
+}
+
+.reticle[data-active] .reticle-ring {
+  transform: scale(1.4) rotate(45deg);
+}
+
+.reticle[data-pressed] .reticle-ring {
+  transform: scale(0.75);
+}
+
+.reticle[data-active][data-pressed] .reticle-ring {
+  transform: scale(1.05) rotate(45deg);
+}
+
+.reticle-dot {
+  position: absolute;
+  top: -2.5px;
+  left: -2.5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: currentColor;
+  box-shadow: 0 0 0 1px var(--color-ink), 0 0 10px 2px currentColor;
+}
+
+.reticle-label {
+  position: absolute;
+  top: 0;
+  left: 36px;
+  transform: translateY(-50%);
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgb(5 7 15 / 0.88);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.reticle-label:empty {
+  display: none;
+}
+
+.reticle[data-threat] .reticle-label {
+  color: var(--color-red-soft);
+}
+
+.reticle[data-flip] .reticle-label {
+  right: 36px;
+  left: auto;
 }
 
 /* Hero */

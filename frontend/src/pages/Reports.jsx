@@ -48,6 +48,7 @@ export default function Reports() {
                 to={`/reports/${encodeURIComponent(r.attack_type)}`}
                 replace
                 aria-current={active ? 'page' : undefined}
+                data-threat={r.severity === 'Critical' || undefined}
                 className={`block rounded-lg border px-3 py-2 text-sm transition ${
                   active ? 'border-cyan bg-cyan/10' : 'border-line bg-panel hover:border-cyan/50'
                 }`}

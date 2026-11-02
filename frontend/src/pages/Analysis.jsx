@@ -50,6 +50,7 @@ export default function Analysis() {
               key={a.attack_type}
               type="button"
               aria-pressed={active}
+              data-threat={a.severity === 'Critical' || undefined}
               onClick={() => navigate(`/analysis/${encodeURIComponent(a.attack_type)}`, { replace: true })}
               className={`flex flex-col rounded-xl border p-4 text-left transition-colors ${
                 active ? 'border-cyan bg-cyan/10 shadow-[0_0_20px_rgb(34_211_238/0.15)]' : 'border-line bg-panel hover:border-cyan/50'
