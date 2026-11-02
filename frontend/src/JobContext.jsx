@@ -4,9 +4,11 @@ import { api } from './api'
 // The current analysis job. Its id is remembered in localStorage so a page
 // refresh keeps the results (until the server restarts). Status is polled here,
 // not on the scan page, so a job that finishes while you're on another page still
-// unlocks the results.
+// unlocks the results. Polling carries on after results unlock, slower, because the
+// incident reports keep arriving in the background.
 const KEY = 'cybersentry.jobId'
 const POLL_MS = 400
+const REPORTS_POLL_MS = 1500
 const RETRY_MS = 2000
 const JobContext = createContext(null)
 
@@ -52,7 +54,9 @@ export function JobProvider({ children }) {
         setJob(s)
         setPollError(null)
         setChecking(false)
-        if (s.status !== 'done' && s.status !== 'error') timer = setTimeout(poll, POLL_MS)
+        if (s.status !== 'done' && s.status !== 'error') {
+          timer = setTimeout(poll, s.results_ready ? REPORTS_POLL_MS : POLL_MS)
+        }
       } catch (e) {
         if (cancelled) return
         setChecking(false)
@@ -80,8 +84,10 @@ export function JobProvider({ children }) {
     checking,
     lostJob,
     pollError,
-    ready: current?.status === 'done',
-    running: Boolean(jobId) && (!current || ['queued', 'running'].includes(current.status)),
+    ready: Boolean(current?.results_ready),
+    running: Boolean(jobId) && (!current || (['queued', 'running'].includes(current.status) && !current.results_ready)),
+    reports: current?.reports ?? [],
+    reportsPending: current?.status === 'running' && Boolean(current?.results_ready),
   }
   return <JobContext.Provider value={value}>{children}</JobContext.Provider>
 }

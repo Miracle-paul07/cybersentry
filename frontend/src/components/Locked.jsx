@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { Magnetic } from './fx'
 import { useJob } from '../JobContext'
 
-// Pages 3-6 need a finished analysis; until then show the "awaiting" state.
+// Pages 3-6 need finished detection (reports can still be running); until then show the "awaiting" state.
 export default function Locked({ children }) {
   const { ready, running, checking, jobId } = useJob()
   if (checking) return null
@@ -18,7 +18,7 @@ export default function Locked({ children }) {
       <h1 className="mt-3 font-display text-2xl font-bold sm:text-3xl">Awaiting network data</h1>
       <p className="mt-4 text-muted">
         {running
-          ? 'An analysis is still running. Results unlock as soon as it finishes.'
+          ? 'An analysis is still running. Results unlock as soon as detection finishes.'
           : 'Upload a flow CSV to unlock the overview, detection, analysis and report views.'}
       </p>
       <Magnetic className="mt-8">

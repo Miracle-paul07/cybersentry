@@ -5,8 +5,13 @@ End-to-end API test with the demo CSV.
     python -m backend.test_api --online   # real Groq calls if GROQ_API_KEY is set
 """
 import io
+import json
+import os
 import sys
+import threading
 import time
+from contextlib import contextmanager
+from types import SimpleNamespace
 
 import pandas as pd
 from fastapi.testclient import TestClient
@@ -14,7 +19,7 @@ from fastapi.testclient import TestClient
 from . import PROJECT_ROOT, reports
 from .main import app, state
 
-from genai_report import grounding_check  # noqa: E402  (src/ on sys.path via backend/__init__.py)
+from genai_report import grounding_check, retry_wait, template_narrative  # noqa: E402  (src/ on sys.path via backend/__init__.py)
 
 ONLINE = "--online" in sys.argv
 DEMO = PROJECT_ROOT / "app" / "sample_data" / "demo_flows.csv"
@@ -41,6 +46,185 @@ def wait(client, job_id, timeout=600):
             return s, seen, time.time() - start
         time.sleep(0.05)
     raise TimeoutError(job_id)
+
+
+def until(condition, timeout=60):
+    start = time.time()
+    while time.time() - start < timeout:
+        value = condition()
+        if value:
+            return value
+        time.sleep(0.02)
+    raise TimeoutError("condition never became true")
+
+
+class RateLimited(Exception):
+    def __init__(self, retry_after="0"):
+        super().__init__("429 rate limit")
+        self.status_code = 429
+        self.response = SimpleNamespace(headers={"retry-after": retry_after})
+
+
+class FakeGroq:
+    """Stands in for the Groq client, so the real retry and fallback code runs without using quota."""
+
+    def __init__(self, gated=False, error_for=lambda attack: None):
+        self.calls = []
+        self.options = {}
+        self.permits = threading.Semaphore(0) if gated else None   # gated: each call waits for release()
+        self.error_for = error_for
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
+
+    def release(self, n=1):
+        for _ in range(n):
+            self.permits.release()
+
+    def create(self, model, messages, **kwargs):
+        evidence = json.loads(messages[1]["content"].split("EVIDENCE:\n", 1)[1])
+        self.calls.append(evidence["attack_type"])
+        self.options = kwargs
+        if self.permits:
+            self.permits.acquire(timeout=60)
+        error = self.error_for(evidence["attack_type"])
+        if error:
+            raise error
+        content = json.dumps(template_narrative(evidence))
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
+
+
+@contextmanager
+def fake_groq(fake):
+    saved = reports.llm_client, reports.groq_reachable, os.environ.get("GROQ_API_KEY")
+    reports.llm_client, reports.groq_reachable = fake, lambda timeout=2.0: True
+    os.environ["GROQ_API_KEY"] = "test-key"
+    try:
+        yield fake
+    finally:
+        reports.llm_client, reports.groq_reachable = saved[:2]
+        if saved[2] is None:
+            del os.environ["GROQ_API_KEY"]
+        else:
+            os.environ["GROQ_API_KEY"] = saved[2]
+
+
+def background_reports(client, demo, benign_csv):
+    def scan():
+        return upload(client, DEMO.name, demo).json()["job_id"]
+
+    def snap(job_id):
+        return client.get(f"/api/jobs/{job_id}").json()
+
+    def code(job_id, attack, suffix=""):
+        return client.get(f"/api/jobs/{job_id}/reports/{attack}{suffix}").status_code
+
+    print("Results unlock before the reports are written")
+    with fake_groq(FakeGroq(gated=True)) as fake:
+        job_id = scan()
+        s = until(lambda: (lambda x: x if x["results_ready"] else None)(snap(job_id)))
+        check("unlocked while reports are pending", s["status"] == "running" and s["stages"]["genai"]["status"] == "running"
+              and s["counts"]["reports_done"] == 0, f"{s['counts']['reports_total']} reports to write")
+        check("overview, detection and analysis open early",
+              all(client.get(f"/api/jobs/{job_id}/{p}").status_code == 200 for p in ("results", "analysis")))
+
+        rows = until(lambda: (lambda r: r if r[0]["status"] == "generating" else None)(snap(job_id)["reports"]))
+        order = [r["attack_type"] for r in rows]
+        ranks = [reports.SEVERITY_RANK[r["severity"]] for r in rows]
+        check("most severe first", ranks == sorted(ranks) and rows[0]["severity"] == "Critical", order)
+        check("same severity: most flows first",
+              all(a["flows"] >= b["flows"] for a, b in zip(rows, rows[1:]) if a["severity"] == b["severity"]))
+        check("one generating, rest queued", all(r["status"] == "queued" for r in rows[1:]))
+        check("/reports lists pending types", len(client.get(f"/api/jobs/{job_id}/reports").json()["reports"]) == len(rows))
+        first, second = order[0], order[1]
+        check("pending report -> 409", code(job_id, first) == 409 and code(job_id, first, ".pdf") == 409
+              and code(job_id, first, ".txt") == 409)
+        check("unknown report still 404", code(job_id, "Nope") == 404)
+
+        fake.release()
+        s = until(lambda: (lambda x: x if x["counts"]["reports_done"] == 1 else None)(snap(job_id)))
+        check("first report ready alone", s["reports"][0]["status"] == "ready" and s["reports"][0]["source"].startswith("Groq")
+              and s["status"] == "running", s["message"])
+        check("its downloads work, the next one's don't", code(job_id, first, ".pdf") == 200
+              and code(job_id, second, ".pdf") == 409)
+
+        fake.release(len(order))
+        s, _, _ = wait(client, job_id)
+        check("all ready, in order", s["status"] == "done" and fake.calls == order
+              and all(r["status"] == "ready" for r in s["reports"]), s["counts"]["reports_done"])
+        check("percent 100, no warnings", s["percent"] == 100 and not s["warnings"], s["warnings"])
+        check("reasoning effort is low", fake.options.get("reasoning_effort") == "low")
+
+    print("Groq failures")
+    check("backoff uses Retry-After", retry_wait(RateLimited("7"), 0) == 7)
+    check("429 without header backs off longer", retry_wait(Exception("429"), 1) == 40)
+    check("other errors retry quickly", retry_wait(Exception("Failed to generate JSON"), 0) == 2)
+
+    with fake_groq(FakeGroq(error_for=lambda a: RateLimited() if a == first else None)) as fake:
+        s, _, _ = wait(client, scan())
+        one = s["reports"][0]
+        check("rate limit: retried then template", fake.calls.count(first) == 8 and one["status"] == "failed"
+              and one["source"].startswith("template"), f"{fake.calls.count(first)} tries")
+        check("rate limit: others unaffected", s["status"] == "done" and all(r["status"] == "ready" for r in s["reports"][1:]))
+        check("rate limit: warning shown", len(s["warnings"]) == 1, s["warnings"])
+        check("failed report still downloads", code(s["job_id"], first, ".pdf") == 200)
+
+    with fake_groq(FakeGroq(error_for=lambda a: RateLimited())) as fake:
+        s, _, _ = wait(client, scan())
+        check("Groq down: stops calling after 2 types", len(fake.calls) == 2 * 8, f"{len(fake.calls)} calls")
+        check("Groq down: all template, job done", s["status"] == "done"
+              and all(r["status"] == "failed" and r["source"] for r in s["reports"]))
+
+    with fake_groq(FakeGroq(error_for=lambda a: RateLimited("3600"))) as fake:
+        start = time.time()
+        s, _, _ = wait(client, scan())
+        check("quota used up: no waiting", len(fake.calls) == 2 and time.time() - start < 30, f"{len(fake.calls)} calls")
+
+    # What really happened with Groq: one output-limit 400 used up the rate limit, then several 429s
+    errors = iter([Exception("Failed to generate JSON")] + [RateLimited() for _ in range(5)])
+    with fake_groq(FakeGroq(error_for=lambda a: next(errors, None) if a == first else None)) as fake:
+        s, _, _ = wait(client, scan())
+        check("400 then 429s: recovers, still AI-written", fake.calls.count(first) == 7
+              and s["reports"][0]["status"] == "ready" and s["reports"][0]["source"].startswith("Groq"),
+              f"{fake.calls.count(first)} tries")
+
+    with fake_groq(FakeGroq(error_for=lambda a: Exception("Failed to generate JSON") if a == first else None)) as fake:
+        s, _, _ = wait(client, scan())
+        check("other errors: 3 tries then template", fake.calls.count(first) == 3 and s["reports"][0]["status"] == "failed",
+              f"{fake.calls.count(first)} tries")
+
+    real = reports.generate_report
+
+    def crash(evidence, **kwargs):
+        if evidence["attack_type"] == first:
+            raise ValueError("boom")
+        return real(evidence, **kwargs)
+
+    reports.generate_report = crash
+    with fake_groq(FakeGroq()):
+        s, _, _ = wait(client, scan())
+    reports.generate_report = real
+    check("crash in one report: job survives", s["status"] == "done" and s["reports"][0]["status"] == "failed"
+          and s["reports"][0]["source"] is None and all(r["status"] == "ready" for r in s["reports"][1:]))
+    check("crashed report -> 409", code(s["job_id"], first, ".pdf") == 409)
+
+    print("A new scan takes over Groq")
+    with fake_groq(FakeGroq(gated=True)) as fake:
+        old = scan()
+        until(lambda: snap(old)["reports"] and snap(old)["reports"][0]["status"] == "generating")
+        new = scan()
+        fake.release(len(order) + 1)
+        a, _, _ = wait(client, old)
+        b, _, _ = wait(client, new)
+        check("older scan finishes on templates", a["status"] == "done" and a["reports"][0]["status"] == "ready"
+              and all(r["status"] == "failed" for r in a["reports"][1:]), a["warnings"])
+        check("newer scan gets Groq", all(r["status"] == "ready" for r in b["reports"])
+              and len(fake.calls) == len(order) + 1, f"{len(fake.calls)} calls")
+
+    print("No threats")
+    r = upload(client, "benign.csv", benign_csv)
+    s, _, _ = wait(client, r.json()["job_id"])
+    check("benign file finishes with no reports", s["status"] == "done" and s["results_ready"] and s["reports"] == []
+          and s["counts"]["threats"] == 0, s["message"])
+    check("/reports empty", client.get(f"/api/jobs/{s['job_id']}/reports").json()["reports"] == [])
 
 
 def main():
@@ -145,6 +329,9 @@ def main():
         print("Incident reports")
         rl = client.get(f"/api/jobs/{job_id}/reports").json()["reports"]
         check("one report per attack type", len(rl) == len(cards), [r["source"] for r in rl][:2])
+        if not ONLINE:
+            check("offline: template counts as ready, not failed",
+                  all(r["status"] == "ready" and r["source"].startswith("template") for r in rl))
         for r in rl:
             a = r["attack_type"]
             j = client.get(f"/api/jobs/{job_id}/reports/{a}").json()
@@ -157,6 +344,9 @@ def main():
                                      f"pdf={len(pdf.content) // 1024}KB")
         check("unknown report 404", client.get(f"/api/jobs/{job_id}/reports/Nope.pdf").status_code == 404)
         check("unknown API 404", client.get("/api/whatever").status_code == 404)
+
+        benign = expected.loc[~expected["is_threat"], pipe.required_features]
+        background_reports(client, demo, benign.to_csv(index=False).encode())
 
         print("Sample endpoint + frontend fallback")
         r = client.post("/api/analyze/sample")

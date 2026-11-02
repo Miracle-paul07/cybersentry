@@ -218,27 +218,60 @@ key_evidence (3-5 bullet strings citing evidence values), potential_impact (1-2 
 recommended_actions (3-5 items), analyst_note (what to verify, and the reminder that this is AI-assisted)."""
 
 
+MAX_RETRY_WAIT = 90   # seconds; a longer Retry-After means a quota is used up, so don't wait for it
+MAX_RATE_LIMIT_TRIES = 8
+MAX_RATE_LIMIT_WAIT = 180   # seconds one report may spend waiting on rate limits
+
+
+def is_rate_limit(err):
+    return getattr(err, "status_code", None) == 429 or "429" in str(err) or "rate limit" in str(err).lower()
+
+
+def retry_wait(err, attempt):
+    """Seconds to wait before the next try: Groq's Retry-After if it sent one, else a growing backoff."""
+    headers = getattr(getattr(err, "response", None), "headers", None) or {}
+    try:
+        return float(headers.get("retry-after"))
+    except (TypeError, ValueError):
+        pass
+    return (20 if is_rate_limit(err) else 2) * (attempt + 1)
+
+
 def call_groq(evidence, model=DEFAULT_MODEL, client=None, retries=3):
     """Ask the LLM to narrate the evidence. Returns a dict matching NARRATIVE_SCHEMA."""
     if client is None:
         from groq import Groq
-        client = Groq(api_key=os.environ["GROQ_API_KEY"])
+        # max_retries=0: all retrying happens below, so the waits stay predictable
+        client = Groq(api_key=os.environ["GROQ_API_KEY"], max_retries=0)
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": "EVIDENCE:\n" + json.dumps(evidence, indent=2)}]
-    last_err = None
-    for attempt in range(retries):
+    # gpt-oss spends about 1,300 hidden reasoning tokens per report by default. Narrating given
+    # evidence doesn't need them, and they can use up the output limit before the JSON is finished.
+    extra = {"reasoning_effort": "low"} if "gpt-oss" in model else {}
+    errors = limits = 0
+    waited = 0.0
+    while True:
         try:
             resp = client.chat.completions.create(
                 model=model, messages=messages, temperature=0.2,
                 response_format={"type": "json_schema",
                                  "json_schema": {"name": "incident_narrative", "strict": True,
-                                                 "schema": NARRATIVE_SCHEMA}})
+                                                 "schema": NARRATIVE_SCHEMA}}, **extra)
             return json.loads(resp.choices[0].message.content)
         except Exception as e:  # rate limit (429), network, or malformed output
-            last_err = e
-            wait = 20 if "429" in str(e) or "rate" in str(e).lower() else 2
-            time.sleep(wait * (attempt + 1))
-    raise RuntimeError(f"Groq call failed after {retries} attempts: {last_err}")
+            # A 429 means Groq didn't process the request, so it costs waiting time, not a retry
+            if is_rate_limit(e):
+                wait = retry_wait(e, limits)
+                limits += 1
+                waited += wait
+                give_up = limits >= MAX_RATE_LIMIT_TRIES or wait > MAX_RETRY_WAIT or waited > MAX_RATE_LIMIT_WAIT
+            else:
+                wait = retry_wait(e, errors)
+                errors += 1
+                give_up = errors >= retries
+            if give_up:
+                raise RuntimeError(f"Groq call failed after {errors + limits} attempts: {e}") from e
+            time.sleep(wait)
 
 
 def template_narrative(evidence):
@@ -344,7 +377,7 @@ def generate_report(evidence, use_llm=True, model=DEFAULT_MODEL, client=None):
             narrative = call_groq(evidence, model=model, client=client)
             source = f"Groq {model}"
         except Exception as e:
-            print(f"[genai] LLM failed, using template: {e}")
+            print(f"[genai] LLM failed, using template: {e}", flush=True)
     if narrative is None:
         narrative = template_narrative(evidence)
     check = grounding_check(narrative, evidence)

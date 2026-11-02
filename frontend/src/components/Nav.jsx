@@ -17,7 +17,8 @@ function LockIcon() {
 }
 
 export default function Nav() {
-  const { ready, running, jobId } = useJob()
+  const { ready, running, jobId, job, reportsPending } = useJob()
+  const reportsTotal = job?.counts.reports_total ?? 0
   const linkClass = ({ isActive }) =>
     `rounded-full px-3 py-1.5 text-sm transition-colors ${isActive ? 'bg-cyan/10 text-cyan' : 'text-muted hover:text-text'}`
 
@@ -39,6 +40,15 @@ export default function Nav() {
           <NavLink key={to} to={to} className={linkClass} title={ready ? undefined : 'Run an analysis first'}>
             {label}
             {!ready && <LockIcon />}
+            {to === '/reports' && ready && reportsTotal > 0 && (
+              <span
+                className={`num ml-1.5 inline-flex items-center gap-1 text-xs ${reportsPending ? 'text-amber' : 'text-muted'}`}
+                title={`${job.counts.reports_done} of ${reportsTotal} incident reports finished`}
+              >
+                {reportsPending && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber" aria-hidden="true" />}
+                {job.counts.reports_done}/{reportsTotal}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

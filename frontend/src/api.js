@@ -47,7 +47,6 @@ export const api = {
   flow: (id, row) => request(`/api/jobs/${id}/flows/${row}`),
   attacks: (id) => request(`/api/jobs/${id}/analysis`),
   attack: (id, type) => request(`/api/jobs/${id}/analysis/${enc(type)}`),
-  reports: (id) => request(`/api/jobs/${id}/reports`),
   report: (id, type) => request(`/api/jobs/${id}/reports/${enc(type)}`),
 }
 

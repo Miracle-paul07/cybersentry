@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { CountUp, Reveal } from '../components/fx'
+import { CountUp, Magnetic, Reveal } from '../components/fx'
+import ReportState from '../components/ReportState'
 import { useJob } from '../JobContext'
 
 // Small files finish all ML/DL stages in well under a second. Each stage is
 // shown for at least this long so the tracker is readable; all numbers are real.
 const MIN_STAGE_MS = 900
-const SLOW_NOTE_AFTER_MS = 15000
+// Reports that finish this fast had no Groq wait, so go straight to the results.
+// After a longer wait the user may be reading this page, so leave them on it.
+const AUTO_OPEN_WITHIN_S = 5
 
 const STAGES = [
   {
@@ -52,7 +55,6 @@ export default function Scan() {
   const navigate = useNavigate()
   const { job, setJobId, jobId: currentId, lostJob, pollError } = useJob()
   const [shown, setShown] = useState(0) // stages displayed as finished
-  const [slow, setSlow] = useState(false)
   const lastAdvance = useRef(Date.now())
 
   // Opening a scan link directly makes that job the current one
@@ -77,19 +79,17 @@ export default function Scan() {
   }, [shown, realDone])
 
   const finished = snap?.status === 'done' && shown === STAGES.length
+  const fast = snap?.status === 'done' && snap.stages.genai.seconds < AUTO_OPEN_WITHIN_S
+  const autoOpen = finished && fast
   useEffect(() => {
-    if (!finished) return
+    if (!autoOpen) return
     const t = setTimeout(() => navigate('/overview'), 1100)
     return () => clearTimeout(t)
-  }, [finished, navigate])
+  }, [autoOpen, navigate])
 
-  // AI reports are limited by the Groq free tier, so say why this stage takes a while
-  const writing = snap?.stage === 'genai' && snap.counts.reports_total > 0
-  useEffect(() => {
-    if (!writing) return
-    const t = setTimeout(() => setSlow(true), SLOW_NOTE_AFTER_MS)
-    return () => clearTimeout(t)
-  }, [writing])
+  // ML + DL are done on screen too, so the results can be opened
+  const resultsOpen = Boolean(snap?.results_ready) && shown >= 3
+  const writing = resultsOpen && !finished && snap.counts.reports_total > 0
 
   const failed = snap?.status === 'error'
   const activeIndex = Math.min(shown, STAGES.length - 1)
@@ -122,14 +122,19 @@ export default function Scan() {
   }
   const c = snap?.counts
   const threatTypes = c ? Object.entries(c.threats_by_type).sort((a, b) => b[1] - a[1]) : []
+  const headline = finished
+    ? 'Analysis complete'
+    : failed
+      ? 'Analysis failed'
+      : resultsOpen
+        ? 'Detection complete, reports in progress'
+        : 'Analysis in progress'
 
   return (
     <Reveal as="section" className="mx-auto max-w-5xl px-4 py-12">
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="min-w-0">
-          <p className="num text-xs tracking-widest text-cyan uppercase">
-            {finished ? 'Analysis complete' : failed ? 'Analysis failed' : 'Analysis in progress'}
-          </p>
+          <p className="num text-xs tracking-widest text-cyan uppercase">{headline}</p>
           <h1 className="mt-2 font-display text-xl font-bold break-all sm:text-2xl">{snap?.filename ?? 'Starting…'}</h1>
         </div>
         <p className={`num text-5xl font-semibold sm:text-6xl ${failed ? 'text-red-soft' : 'text-cyan'}`}>
@@ -164,10 +169,23 @@ export default function Scan() {
         </p>
       )}
 
-      {slow && !finished && !failed && (
-        <p className="mt-2 text-sm text-muted">
-          AI-written reports wait on the Groq free tier's rate limit, so this stage can take a few minutes.
-        </p>
+      {resultsOpen && !fast && (
+        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <Magnetic>
+            <Link
+              to="/overview"
+              className="inline-block rounded-full border border-cyan/60 bg-cyan/10 px-6 py-2.5 text-sm font-semibold text-cyan transition hover:bg-cyan/20 hover:shadow-[0_0_24px_rgb(34_211_238/0.35)]"
+            >
+              View results
+            </Link>
+          </Magnetic>
+          {writing && (
+            <p className="min-w-0 flex-1 basis-64 text-sm text-muted">
+              Detection is done. AI reports wait on the Groq free tier's rate limit and keep arriving in the background, so
+              you don't need to stay on this page.
+            </p>
+          )}
+        </div>
       )}
 
       {shown >= 3 && snap?.warnings?.map((w) => (
@@ -204,19 +222,12 @@ export default function Scan() {
             <div className="glass rounded-xl p-5">
               <h2 className="font-semibold">Incident reports</h2>
               <ul className="mt-3 space-y-1.5 text-sm">
-                {threatTypes.map(([type]) => {
-                  const written = c.reports_written.includes(type)
-                  const current = c.report_current === type
-                  return (
-                    <li key={type} className={`flex items-center gap-2 ${written || current ? '' : 'text-muted'}`}>
-                      <span className="w-4 text-center" aria-hidden="true">
-                        {written ? <span className="text-cyan">✓</span> : current ? <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-cyan" /> : '·'}
-                      </span>
-                      {type}
-                      <span className="num ml-auto text-xs text-muted">{written ? 'written' : current ? 'writing' : 'queued'}</span>
-                    </li>
-                  )
-                })}
+                {snap.reports.map((r) => (
+                  <li key={r.attack_type} className={`flex items-center gap-2 ${r.status === 'queued' ? 'text-muted' : ''}`}>
+                    {r.attack_type}
+                    <ReportState report={r} className="ml-auto" />
+                  </li>
+                ))}
               </ul>
             </div>
           )}

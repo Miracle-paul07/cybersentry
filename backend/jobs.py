@@ -5,6 +5,10 @@ Stages: preprocess -> ml -> dl -> genai. The ML and DL stages run in chunks so t
 website can show live counts. Stage 1 scores are computed per chunk for the ML
 stage, then pipe.predict() (which repeats Stage 1, it is cheap) produces the final
 results in the DL stage, so predict() stays the single source of truth.
+
+Results are usable as soon as the DL stage ends (results_ready). The genai stage then
+runs on its own thread, because Groq's rate limit can make it take minutes, and the
+job's status only becomes "done" when the last report is finished.
 """
 import threading
 import time
@@ -14,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 
 from . import analysis
-from .reports import generate_reports
+from .reports import generate_reports, report_order, severity_of
 
 STAGES = ["preprocess", "ml", "dl", "genai"]
 # Share of the overall progress bar each stage takes
@@ -35,15 +39,17 @@ class Job:
         self.warnings = []
         self.counts = {"rows_in": len(df), "rows_analysed": 0, "rows_dropped_invalid": 0,
                        "scored": 0, "suspicious": 0, "classified": 0, "threats": 0,
-                       "threats_by_type": {}, "reports_done": 0, "reports_total": 0,
-                       "reports_written": [], "report_current": None}
+                       "threats_by_type": {}, "reports_done": 0, "reports_total": 0}
         self.stages = {s: {"status": "pending", "started_at": None, "seconds": None} for s in STAGES}
         self.lock = threading.Lock()
         self.input_df = df
         self.results = None
         self.cleaning = None
         self.summary = None
-        self.reports = {}
+        self.results_ready = False
+        self.reports = {}               # attack type -> finished report
+        self.report_states = {}         # attack type -> state, in the order they get written
+        self.cancel_reports = False
 
     @property
     def percent(self):
@@ -56,11 +62,17 @@ class Job:
         with self.lock:
             return analysis.clean({
                 "job_id": self.id, "filename": self.filename, "status": self.status,
+                "results_ready": self.results_ready,
                 "stage": self.stage, "stage_percent": round(self.stage_percent, 1),
                 "percent": self.percent, "message": self.message, "error": self.error,
                 "warnings": list(self.warnings), "stages": {k: dict(v) for k, v in self.stages.items()},
                 "counts": {**self.counts, "threats_by_type": dict(self.counts["threats_by_type"])},
+                "reports": [dict(r) for r in self.report_states.values()],
             })
+
+    def report_list(self):
+        with self.lock:
+            return [dict(r) for r in self.report_states.values()]
 
     # -- progress helpers (called from the worker thread) --
     def start_stage(self, stage, message):
@@ -82,6 +94,27 @@ class Job:
             info.update(status="done", seconds=round(time.time() - info["started_at"], 3))
             self.stage_percent = 100.0
 
+    def add_warning(self, text):
+        with self.lock:
+            if text not in self.warnings:
+                self.warnings.append(text)
+
+    def set_report_state(self, attack, status, report=None):
+        with self.lock:
+            state = self.report_states[attack]
+            state["status"] = status
+            if report:
+                self.reports[attack] = report
+                state.update(source=report["source"], incident_id=report["incident_id"])
+            total = len(self.report_states)
+            if status == "generating":
+                position = list(self.report_states).index(attack) + 1
+                self.message = f"Writing incident report for {attack} ({position}/{total})"
+            else:
+                done = sum(r["status"] in ("ready", "failed") for r in self.report_states.values())
+                self.counts["reports_done"] = done
+                self.stage_percent = 100 * done / total
+
 
 class JobManager:
     def __init__(self, pipeline, baseline):
@@ -96,6 +129,8 @@ class JobManager:
         job = Job(filename, df)
         with self.lock:
             self.jobs[job.id] = job
+            for other in self.jobs.values():
+                other.cancel_reports = other is not job
             for old in sorted(self.jobs.values(), key=lambda j: j.created_at)[:-MAX_JOBS]:
                 if old.status in ("done", "error"):
                     del self.jobs[old.id]
@@ -109,17 +144,33 @@ class JobManager:
         with job.lock:
             job.status = "running"
         try:
-            self._analyse(job)
-            with job.lock:
-                job.status, job.stage, job.message = "done", "done", "Analysis complete"
+            results = self._analyse(job)
         except Exception as e:
             with job.lock:
                 job.status, job.error = "error", str(e)
                 if job.stage:
                     job.stages[job.stage]["status"] = "error"
                 job.message = "Analysis failed"
+            return
         finally:
             job.input_df = None
+        # Daemon thread: a report waiting on Groq must not keep the server from stopping
+        threading.Thread(target=self._write_reports, args=(job, results), daemon=True,
+                         name=f"cybersentry-reports-{job.id}").start()
+
+    def _write_reports(self, job, results):
+        try:
+            generate_reports(list(job.report_states), results, self.baseline, job.set_report_state,
+                             job.add_warning, cancelled=lambda: job.cancel_reports)
+        except Exception as e:
+            print(f"[reports] report generation stopped: {e}", flush=True)
+            job.add_warning("Report generation stopped early, so some incident reports are missing.")
+            for attack, state in list(job.report_states.items()):
+                if state["status"] in ("queued", "generating"):
+                    job.set_report_state(attack, "failed")
+        job.finish_stage("genai")
+        with job.lock:
+            job.status, job.stage, job.message = "done", "done", "Analysis complete"
 
     def _analyse(self, job):
         pipe = self.pipeline
@@ -161,27 +212,15 @@ class JobManager:
         results = analysis.add_risk(pd.concat(parts))
         job.finish_stage("dl")
 
-        job.start_stage("genai", "Writing incident reports")
-        n_types = len(by_type)
-        job.update(reports_total=n_types,
-                   message="No threats found, no reports needed" if not n_types else None)
-
-        written, current = [], [None]
-
-        def progress(done, total, attack):
-            if current[0]:
-                written.append(current[0])
-            current[0] = attack
-            job.update(100 * done / total if total else 100.0,
-                       message=f"Writing incident report for {attack} ({done + 1}/{total})"
-                       if attack else "Incident reports ready",
-                       reports_done=done, reports_written=list(written), report_current=attack)
-
-        reports, warnings = generate_reports(results, self.baseline, progress=progress)
-        with job.lock:
-            job.warnings.extend(warnings)
-        job.finish_stage("genai")
-
         job.results = results
-        job.reports = reports
         job.summary = analysis.summary(results, cleaning, job.filename)
+
+        order = report_order(results)
+        job.start_stage("genai", "Writing incident reports" if order else "No threats found, no reports needed")
+        with job.lock:
+            job.report_states = {attack: {"attack_type": attack, "severity": severity_of(attack), "flows": flows,
+                                          "status": "queued", "source": None, "incident_id": None}
+                                 for attack, flows in order}
+            job.counts["reports_total"] = len(order)
+            job.results_ready = True
+        return results

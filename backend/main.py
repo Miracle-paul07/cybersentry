@@ -81,17 +81,21 @@ def get_job(job_id, finished=True):
     if job is None:
         bad_request("Analysis not found. It may have expired after a server restart; please upload again.",
                     status=404)
-    if finished and job.status != "done":
+    if finished and not job.results_ready:
         bad_request(f"Analysis is not finished yet (status: {job.status}).", status=409)
     return job
 
 
 def get_report(job, attack_type):
     report = job.reports.get(attack_type)
-    if report is None:
+    if report is not None:
+        return report
+    state = job.report_states.get(attack_type)
+    if state is None:
         bad_request(f"No incident report for '{attack_type}'.", status=404,
-                    available=list(job.reports.keys()))
-    return report
+                    available=list(job.report_states))
+    bad_request(f"The report for '{attack_type}' is not available (status: {state['status']}).",
+                status=409, report_status=state["status"])
 
 
 def download(data, filename, media_type):
@@ -177,9 +181,7 @@ def job_attack_analysis(job_id: str, attack_type: str):
 @app.get("/api/jobs/{job_id}/reports")
 def job_report_list(job_id: str):
     job = get_job(job_id)
-    return {"warnings": job.warnings,
-            "reports": [{k: r[k] for k in ("attack_type", "incident_id", "severity", "source")}
-                        for r in job.reports.values()]}
+    return {"warnings": job.warnings, "reports": job.report_list()}
 
 
 # File routes come before the JSON route: "{attack_type}" would also match "DoS Hulk.pdf"
