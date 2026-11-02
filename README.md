@@ -44,7 +44,7 @@ Run `run.bat` once while online, so the website is built. After that, everything
 
 Without internet or without a key, CyberSentry detects this and writes template reports from the same evidence, and the website shows a notice saying so.
 
-**AI reports take time.** On the Groq free tier, a file with 12 attack types takes about 3 to 4 minutes because of rate limits. Results unlock when all reports are done. To skip the wait, leave `GROQ_API_KEY` empty and a scan takes a few seconds.
+**AI reports take time.** On the Groq free tier, a file with 12 attack types takes about 2 minutes because of rate limits. You don't have to wait for them: Overview, Detection and Analysis unlock as soon as detection finishes, and reports appear on the Reports page one by one, most severe first. If Groq keeps failing for an attack type, that type gets a template report instead. To skip Groq entirely, leave `GROQ_API_KEY` empty and all reports are ready in a few seconds.
 
 ## Developing the website
 
@@ -64,7 +64,7 @@ cd frontend && npm run dev
 venv\Scripts\python -m backend.test_api
 ```
 
-Add `--online` to use real Groq calls (several minutes).
+This uses a fake Groq client for the background report tests, so it spends no quota. Add `--online` to also run the main demo scan with real Groq calls (several minutes).
 
 ## Streamlit backup
 

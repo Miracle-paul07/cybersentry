@@ -25,3 +25,8 @@ __pycache__/
 # Frontend
 frontend/node_modules/
 frontend/dist/
+
+# Report downloads saved to the repo root
+/*.md
+!/README.md
+!/CLAUDE.md
