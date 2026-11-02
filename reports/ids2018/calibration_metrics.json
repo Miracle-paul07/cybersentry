@@ -1,0 +1,865 @@
+{
+  "settings": {
+    "seed": 42,
+    "max_fpr": 0.05,
+    "saved_threshold": 0.5,
+    "calibrated_threshold": 5.9e-05,
+    "calibration_rows": 50054,
+    "test_rows": 50054,
+    "note": "Analysis only. The saved model and the website's threshold are unchanged."
+  },
+  "calibration_half_fpr": 0.0499,
+  "test_half": {
+    "original_threshold": {
+      "rows": 50054,
+      "stage1": {
+        "accuracy": 0.246234,
+        "precision": 0.999141,
+        "recall": 0.058097,
+        "f1": 0.109808,
+        "fpr": 0.0002,
+        "fnr": 0.941903,
+        "roc_auc": 0.816746,
+        "tp": 2327,
+        "fp": 2,
+        "tn": 9998,
+        "fn": 37727
+      },
+      "pipeline": {
+        "accuracy": 0.23105,
+        "precision": 0.998725,
+        "recall": 0.039122,
+        "f1": 0.075295,
+        "fpr": 0.0002,
+        "fnr": 0.960878,
+        "roc_auc": null,
+        "tp": 1567,
+        "fp": 2,
+        "tn": 9998,
+        "fn": 38487
+      },
+      "multiclass": {
+        "accuracy": 0.201363,
+        "macro_f1": 0.051141,
+        "per_class": [
+          {
+            "class": "BENIGN",
+            "precision": 0.206208,
+            "recall": 0.9998,
+            "f1": 0.3419,
+            "support": 10000
+          },
+          {
+            "class": "Bot",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 10000
+          },
+          {
+            "class": "DDoS",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 10000
+          },
+          {
+            "class": "DoS Hulk",
+            "precision": 0.986842,
+            "recall": 0.0075,
+            "f1": 0.014887,
+            "support": 10000
+          },
+          {
+            "class": "DoS Slowhttptest",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 28
+          },
+          {
+            "class": "FTP-Patator",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 26
+          },
+          {
+            "class": "SSH-Patator",
+            "precision": 1.0,
+            "recall": 0.0006,
+            "f1": 0.001199,
+            "support": 10000
+          }
+        ],
+        "confusion": {
+          "true": [
+            "BENIGN",
+            "Bot",
+            "DDoS",
+            "DoS Hulk",
+            "DoS Slowhttptest",
+            "FTP-Patator",
+            "SSH-Patator"
+          ],
+          "predicted": [
+            "BENIGN",
+            "Bot",
+            "DDoS",
+            "DoS GoldenEye",
+            "DoS Hulk",
+            "DoS Slowhttptest",
+            "DoS slowloris",
+            "FTP-Patator",
+            "Heartbleed",
+            "Infiltration",
+            "PortScan",
+            "SSH-Patator",
+            "Web Attack"
+          ],
+          "matrix": [
+            [
+              9998,
+              0,
+              0,
+              1,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              10000,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              10000,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              8489,
+              0,
+              0,
+              1436,
+              75,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              26,
+              0,
+              0
+            ],
+            [
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              23,
+              0,
+              0
+            ],
+            [
+              9993,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6,
+              0
+            ]
+          ]
+        }
+      },
+      "stage1_flagged_by_label": {
+        "Benign": 0.0002,
+        "Bot": 0.0,
+        "DDOS attack-HOIC": 0.0,
+        "DDOS attack-LOIC-UDP": 0.0,
+        "DoS attacks-Hulk": 0.2271,
+        "DoS attacks-SlowHTTPTest": 0.928571,
+        "FTP-BruteForce": 0.884615,
+        "SSH-Bruteforce": 0.0007
+      }
+    },
+    "calibrated_threshold": {
+      "rows": 50054,
+      "stage1": {
+        "accuracy": 0.678208,
+        "precision": 0.978729,
+        "recall": 0.61115,
+        "f1": 0.752448,
+        "fpr": 0.0532,
+        "fnr": 0.38885,
+        "roc_auc": 0.816746,
+        "tp": 24479,
+        "fp": 532,
+        "tn": 9468,
+        "fn": 15575
+      },
+      "pipeline": {
+        "accuracy": 0.430815,
+        "precision": 0.986046,
+        "recall": 0.292855,
+        "f1": 0.451588,
+        "fpr": 0.0166,
+        "fnr": 0.707145,
+        "roc_auc": null,
+        "tp": 11730,
+        "fp": 166,
+        "tn": 9834,
+        "fn": 28324
+      },
+      "multiclass": {
+        "accuracy": 0.345527,
+        "macro_f1": 0.187504,
+        "per_class": [
+          {
+            "class": "BENIGN",
+            "precision": 0.257718,
+            "recall": 0.9834,
+            "f1": 0.408406,
+            "support": 10000
+          },
+          {
+            "class": "Bot",
+            "precision": 1.0,
+            "recall": 0.7068,
+            "f1": 0.828217,
+            "support": 10000
+          },
+          {
+            "class": "DDoS",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 10000
+          },
+          {
+            "class": "DoS Hulk",
+            "precision": 0.984043,
+            "recall": 0.037,
+            "f1": 0.071318,
+            "support": 10000
+          },
+          {
+            "class": "DoS Slowhttptest",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 28
+          },
+          {
+            "class": "FTP-Patator",
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 26
+          },
+          {
+            "class": "SSH-Patator",
+            "precision": 0.793103,
+            "recall": 0.0023,
+            "f1": 0.004587,
+            "support": 10000
+          }
+        ],
+        "confusion": {
+          "true": [
+            "BENIGN",
+            "Bot",
+            "DDoS",
+            "DoS Hulk",
+            "DoS Slowhttptest",
+            "FTP-Patator",
+            "SSH-Patator"
+          ],
+          "predicted": [
+            "BENIGN",
+            "Bot",
+            "DDoS",
+            "DoS GoldenEye",
+            "DoS Hulk",
+            "DoS Slowhttptest",
+            "DoS slowloris",
+            "FTP-Patator",
+            "Heartbleed",
+            "Infiltration",
+            "PortScan",
+            "SSH-Patator",
+            "Web Attack"
+          ],
+          "matrix": [
+            [
+              9834,
+              0,
+              0,
+              156,
+              5,
+              2,
+              2,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              2932,
+              7068,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              9135,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              865,
+              0,
+              0,
+              0
+            ],
+            [
+              6281,
+              0,
+              0,
+              3280,
+              370,
+              53,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6,
+              10
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              28,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              26,
+              0,
+              0
+            ],
+            [
+              9976,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              23,
+              0
+            ]
+          ]
+        }
+      },
+      "stage1_flagged_by_label": {
+        "Benign": 0.0532,
+        "Bot": 0.7218,
+        "DDOS attack-HOIC": 0.0,
+        "DDOS attack-LOIC-UDP": 1.0,
+        "DoS attacks-Hulk": 0.8697,
+        "DoS attacks-SlowHTTPTest": 1.0,
+        "FTP-BruteForce": 1.0,
+        "SSH-Bruteforce": 0.7645
+      }
+    }
+  },
+  "other_fpr_budgets": {
+    "0.01": {
+      "threshold": 0.003377,
+      "stage1": {
+        "accuracy": 0.369641,
+        "precision": 0.98907,
+        "recall": 0.214635,
+        "f1": 0.352726,
+        "fpr": 0.0095,
+        "fnr": 0.785365,
+        "roc_auc": 0.816746,
+        "tp": 8597,
+        "fp": 95,
+        "tn": 9905,
+        "fn": 31457
+      },
+      "pipeline": {
+        "accuracy": 0.274004,
+        "precision": 0.997856,
+        "recall": 0.09295,
+        "f1": 0.170058,
+        "fpr": 0.0008,
+        "fnr": 0.90705,
+        "roc_auc": null,
+        "tp": 3723,
+        "fp": 8,
+        "tn": 9992,
+        "fn": 36331
+      },
+      "macro_f1": 0.060725,
+      "accuracy": 0.206857
+    },
+    "0.1": {
+      "threshold": 2.7e-05,
+      "stage1": {
+        "accuracy": 0.745815,
+        "precision": 0.964987,
+        "recall": 0.708044,
+        "f1": 0.816785,
+        "fpr": 0.1029,
+        "fnr": 0.291956,
+        "roc_auc": 0.816746,
+        "tp": 28360,
+        "fp": 1029,
+        "tn": 8971,
+        "fn": 11694
+      },
+      "pipeline": {
+        "accuracy": 0.460043,
+        "precision": 0.987574,
+        "recall": 0.32938,
+        "f1": 0.494,
+        "fpr": 0.0166,
+        "fnr": 0.67062,
+        "roc_auc": null,
+        "tp": 13193,
+        "fp": 166,
+        "tn": 9834,
+        "fn": 26861
+      },
+      "macro_f1": 0.202635,
+      "accuracy": 0.374615
+    }
+  },
+  "why_misclassified": {
+    "BENIGN": {
+      "rows": 10000,
+      "reached_stage2": 532,
+      "correct_at_stage2": 366,
+      "stage2_predictions": {
+        "BENIGN": 366,
+        "DoS GoldenEye": 156,
+        "DoS Hulk": 5,
+        "DoS Slowhttptest": 2
+      },
+      "closest_2017_classes": {
+        "DDoS": 5.590955,
+        "Bot": 5.822527,
+        "DoS Hulk": 5.86503
+      },
+      "distance_to_own_2017_class": 6.410402,
+      "most_moved_features": [
+        {
+          "feature": "Destination Port",
+          "shift_in_stage2_units": 3.09451,
+          "median_2017": 80.0,
+          "median_2018": 40388.0
+        },
+        {
+          "feature": "Fwd Packet Length Std",
+          "shift_in_stage2_units": 2.491093,
+          "median_2017": 0.0,
+          "median_2018": 283.679016
+        },
+        {
+          "feature": "Init_Win_bytes_backward",
+          "shift_in_stage2_units": 1.936593,
+          "median_2017": -1.0,
+          "median_2018": 211.0
+        },
+        {
+          "feature": "Bwd IAT Min",
+          "shift_in_stage2_units": 1.891927,
+          "median_2017": 2.0,
+          "median_2018": 630.0
+        },
+        {
+          "feature": "Fwd IAT Mean",
+          "shift_in_stage2_units": 1.363713,
+          "median_2017": 4.0,
+          "median_2018": 52210.25
+        }
+      ]
+    },
+    "Bot": {
+      "rows": 10000,
+      "reached_stage2": 7218,
+      "correct_at_stage2": 7068,
+      "stage2_predictions": {
+        "Bot": 7068,
+        "BENIGN": 150
+      },
+      "closest_2017_classes": {
+        "Bot": 4.715856,
+        "BENIGN": 5.702358,
+        "SSH-Patator": 5.767532
+      },
+      "distance_to_own_2017_class": 4.715856,
+      "most_moved_features": [
+        {
+          "feature": "Fwd Packet Length Std",
+          "shift_in_stage2_units": 2.311041,
+          "median_2017": 0.0,
+          "median_2018": 188.216187
+        },
+        {
+          "feature": "Fwd Packet Length Max",
+          "shift_in_stage2_units": 1.748328,
+          "median_2017": 6.0,
+          "median_2018": 326.0
+        },
+        {
+          "feature": "Fwd Packet Length Mean",
+          "shift_in_stage2_units": 1.742468,
+          "median_2017": 6.0,
+          "median_2018": 108.666664
+        },
+        {
+          "feature": "Total Length of Fwd Packets",
+          "shift_in_stage2_units": 1.689175,
+          "median_2017": 6.0,
+          "median_2018": 326.0
+        },
+        {
+          "feature": "Bwd IAT Min",
+          "shift_in_stage2_units": 1.270001,
+          "median_2017": 579.0,
+          "median_2018": 15.0
+        }
+      ]
+    },
+    "DDoS": {
+      "rows": 10000,
+      "reached_stage2": 865,
+      "correct_at_stage2": 0,
+      "stage2_predictions": {
+        "Infiltration": 865
+      },
+      "closest_2017_classes": {
+        "SSH-Patator": 4.852026,
+        "DDoS": 5.158514,
+        "DoS GoldenEye": 5.182141
+      },
+      "distance_to_own_2017_class": 5.158514,
+      "most_moved_features": [
+        {
+          "feature": "PSH Flag Count",
+          "shift_in_stage2_units": 2.041204,
+          "median_2017": 0.0,
+          "median_2018": 1.0
+        },
+        {
+          "feature": "Fwd Packet Length Mean",
+          "shift_in_stage2_units": 1.580182,
+          "median_2017": 7.0,
+          "median_2018": 96.0
+        },
+        {
+          "feature": "Flow Bytes/s",
+          "shift_in_stage2_units": 1.518901,
+          "median_2017": 159.221237,
+          "median_2018": 87185.976562
+        },
+        {
+          "feature": "Init_Win_bytes_forward",
+          "shift_in_stage2_units": 1.500276,
+          "median_2017": 256.0,
+          "median_2018": 65535.0
+        },
+        {
+          "feature": "Fwd Packet Length Std",
+          "shift_in_stage2_units": 1.421125,
+          "median_2017": 5.656854,
+          "median_2018": 166.276871
+        }
+      ]
+    },
+    "DoS Hulk": {
+      "rows": 10000,
+      "reached_stage2": 8697,
+      "correct_at_stage2": 370,
+      "stage2_predictions": {
+        "BENIGN": 4978,
+        "DoS GoldenEye": 3280,
+        "DoS Hulk": 370,
+        "DoS Slowhttptest": 53
+      },
+      "closest_2017_classes": {
+        "Web Attack": 5.194438,
+        "DoS Slowhttptest": 5.978841,
+        "BENIGN": 6.734689
+      },
+      "distance_to_own_2017_class": 9.799694,
+      "most_moved_features": [
+        {
+          "feature": "Flow IAT Min",
+          "shift_in_stage2_units": 3.276037,
+          "median_2017": 1.0,
+          "median_2018": 18545.0
+        },
+        {
+          "feature": "Fwd Packet Length Max",
+          "shift_in_stage2_units": 2.659043,
+          "median_2017": 345.0,
+          "median_2018": 0.0
+        },
+        {
+          "feature": "Packet Length Mean",
+          "shift_in_stage2_units": 2.654589,
+          "median_2017": 852.642883,
+          "median_2018": 0.0
+        },
+        {
+          "feature": "Fwd IAT Min",
+          "shift_in_stage2_units": 2.635997,
+          "median_2017": 2.0,
+          "median_2018": 18928.0
+        },
+        {
+          "feature": "Total Length of Fwd Packets",
+          "shift_in_stage2_units": 2.580361,
+          "median_2017": 354.0,
+          "median_2018": 0.0
+        }
+      ]
+    },
+    "DoS Slowhttptest": {
+      "rows": 28,
+      "reached_stage2": 28,
+      "correct_at_stage2": 0,
+      "stage2_predictions": {
+        "PortScan": 28
+      },
+      "closest_2017_classes": {
+        "PortScan": 4.185332,
+        "BENIGN": 6.985437,
+        "Web Attack": 7.608191
+      },
+      "distance_to_own_2017_class": 10.071911,
+      "most_moved_features": [
+        {
+          "feature": "Fwd IAT Min",
+          "shift_in_stage2_units": 4.161178,
+          "median_2017": 996965.0,
+          "median_2018": 0.0
+        },
+        {
+          "feature": "Flow IAT Min",
+          "shift_in_stage2_units": 3.727768,
+          "median_2017": 996550.5,
+          "median_2018": 29.5
+        },
+        {
+          "feature": "Active Min",
+          "shift_in_stage2_units": 3.621954,
+          "median_2017": 7004681.5,
+          "median_2018": 0.0
+        },
+        {
+          "feature": "Flow IAT Mean",
+          "shift_in_stage2_units": 2.629792,
+          "median_2017": 10500000.0,
+          "median_2018": 29.5
+        },
+        {
+          "feature": "Bwd Packets/s",
+          "shift_in_stage2_units": 2.624027,
+          "median_2017": 0.0,
+          "median_2018": 33908.046875
+        }
+      ]
+    },
+    "FTP-Patator": {
+      "rows": 26,
+      "reached_stage2": 26,
+      "correct_at_stage2": 0,
+      "stage2_predictions": {
+        "PortScan": 26
+      },
+      "closest_2017_classes": {
+        "PortScan": 4.20928,
+        "BENIGN": 7.064331,
+        "Web Attack": 7.749546
+      },
+      "distance_to_own_2017_class": 9.055542,
+      "most_moved_features": [
+        {
+          "feature": "Bwd Packets/s",
+          "shift_in_stage2_units": 2.475741,
+          "median_2017": 1.728172,
+          "median_2018": 51315.789062
+        },
+        {
+          "feature": "Total Fwd Packets",
+          "shift_in_stage2_units": 2.44097,
+          "median_2017": 9.0,
+          "median_2018": 1.0
+        },
+        {
+          "feature": "Flow Packets/s",
+          "shift_in_stage2_units": 2.359711,
+          "median_2017": 2.773488,
+          "median_2018": 102631.578125
+        },
+        {
+          "feature": "Bwd IAT Total",
+          "shift_in_stage2_units": 2.283167,
+          "median_2017": 8653261.5,
+          "median_2018": 0.0
+        },
+        {
+          "feature": "Flow Duration",
+          "shift_in_stage2_units": 2.269321,
+          "median_2017": 8653363.0,
+          "median_2018": 19.5
+        }
+      ]
+    },
+    "SSH-Patator": {
+      "rows": 10000,
+      "reached_stage2": 7645,
+      "correct_at_stage2": 23,
+      "stage2_predictions": {
+        "BENIGN": 7621,
+        "SSH-Patator": 23,
+        "DoS Hulk": 1
+      },
+      "closest_2017_classes": {
+        "SSH-Patator": 2.137368,
+        "FTP-Patator": 4.147681,
+        "DoS GoldenEye": 4.212041
+      },
+      "distance_to_own_2017_class": 2.137368,
+      "most_moved_features": [
+        {
+          "feature": "Flow Bytes/s",
+          "shift_in_stage2_units": 0.82976,
+          "median_2017": 392.495239,
+          "median_2018": 12285.900391
+        },
+        {
+          "feature": "Flow Packets/s",
+          "shift_in_stage2_units": 0.712893,
+          "median_2017": 4.442446,
+          "median_2018": 117.979248
+        },
+        {
+          "feature": "Bwd Packets/s",
+          "shift_in_stage2_units": 0.698494,
+          "median_2017": 2.661433,
+          "median_2018": 57.825726
+        },
+        {
+          "feature": "Flow IAT Mean",
+          "shift_in_stage2_units": 0.675577,
+          "median_2017": 229417.515625,
+          "median_2018": 8673.025391
+        },
+        {
+          "feature": "Flow Duration",
+          "shift_in_stage2_units": 0.607361,
+          "median_2017": 11990970.0,
+          "median_2018": 374307.5
+        }
+      ]
+    }
+  }
+}

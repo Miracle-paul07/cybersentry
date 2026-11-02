@@ -57,9 +57,27 @@ The first two are measured. The others are the most likely explanations, not pro
 - **Not the whole dataset.** These are 4 days of CSE-CIC-IDS2018 and 7 of the 13 classes the models know.
 - **2017 and 2018 mixes differ.** Macro-F1 covers 13 classes on 2017 and 7 on 2018, so the comparison is indicative.
 
+## Does a lower threshold fix it?
+
+Partly for detection, and only a little for naming the attack. The full analysis is in [calibration.md](calibration.md). None of this changes the website, which still uses the saved threshold of 0.5.
+
+| Test half of the 2018 sample | Threshold 0.5 | Calibrated, 0.000059 |
+|---|---:|---:|
+| Stage 1 recall | 5.81% | 61.11% |
+| Stage 1 FPR | 0.02% | 5.32% |
+| Recall after Stage 2 | 3.91% | 29.29% |
+| Pipeline macro-F1 | 5.11% | 18.75% |
+
+- **What improved:** the scores do hold useful signal. Stage 1 now flags most Bot (72%), SSH-Bruteforce (76%) and Hulk (87%) flows, and Stage 2 names 98% of the flagged Bot flows correctly. That one class accounts for much of the macro-F1 gain.
+- **What didn't:** HOIC is still never flagged. Stage 2 sends almost all flagged SSH flows and over half of flagged Hulk flows to BENIGN, labels LOIC-UDP as Infiltration, and labels FTP and SlowHTTPTest as PortScan.
+- **Why Stage 2 still fails:** for Hulk, the features that moved most include `Flow IAT Min` (median 1 to 18,545) and `Fwd Packet Length Max` (345 to 0), so these flows no longer look like 2017 Hulk. For SSH the median flow barely moved and is still closest to 2017 SSH-Patator, yet Stage 2 calls it BENIGN, so medians don't explain that one.
+- **Why this isn't a deployable fix:** the threshold is 8,000 times lower than the saved one and very sensitive: a 1% FPR budget gives only 21.46% recall. Finding it took labelled 2018 traffic, which a new network wouldn't have. The 5% budget was also slightly exceeded on the test half, at 5.32%. And that half is about 80% attacks, so its 97.87% precision is flattering: at the real mix of about 22% attacks, precision would be roughly 76%, as an estimate.
+
+The honest conclusion is that the strict threshold explains part of the problem, not all of it. Fixing detection and naming on a new network still needs retraining.
+
 ## What this means for the project
 
 - The honest claim is that the models detect 2017-style attacks very well on that dataset, not that they detect attacks in general.
-- The **Try the CIC-IDS2018 sample** button will show most attacks being missed. That is the correct result, and the Model Evaluation page explains it.
+- Uploading a 2018 file on the website will show most attacks being missed. That is the correct result, and the Model Evaluation page explains it.
 - AI incident reports describe what the model predicted, so on this data a report can be confidently worded and still name the wrong attack.
 - A real fix would need retraining with 2018 or mixed-network data, or removing the network-specific features. That was out of scope here.

@@ -30,7 +30,6 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 MAX_UPLOAD_MB = 20
 SAMPLE_CSV = PROJECT_ROOT / "app" / "sample_data" / "demo_flows.csv"
-SAMPLE_2018_CSV = PROJECT_ROOT / "app" / "sample_data" / "ids2018_sample.csv"
 DIST = PROJECT_ROOT / "frontend" / "dist"
 
 state = {}
@@ -130,20 +129,11 @@ async def analyze(file: UploadFile = File(...)):
     return {"job_id": job.id}
 
 
-def analyze_file(path):
-    df = read_upload(path.name, path.read_bytes())
-    job = state["jobs"].submit(path.name, df)
-    return {"job_id": job.id}
-
-
 @app.post("/api/analyze/sample")
 def analyze_sample():
-    return analyze_file(SAMPLE_CSV)
-
-
-@app.post("/api/analyze/sample/ids2018")
-def analyze_sample_2018():
-    return analyze_file(SAMPLE_2018_CSV)
+    df = read_upload(SAMPLE_CSV.name, SAMPLE_CSV.read_bytes())
+    job = state["jobs"].submit(SAMPLE_CSV.name, df)
+    return {"job_id": job.id}
 
 
 @app.get("/api/jobs/{job_id}")

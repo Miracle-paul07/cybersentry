@@ -11,8 +11,8 @@ const NetworkScene = lazy(() => import('../components/NetworkScene'))
 const MAX_MB = 20
 const TITLE = 'CyberSentry'
 const TAGLINE = ['Detect.', 'Understand.', 'Respond.']
-const SAMPLE_BUTTON =
-  'rounded-full border border-cyan/60 bg-cyan/10 px-6 py-2.5 text-sm font-semibold text-cyan transition hover:bg-cyan/20 hover:shadow-[0_0_24px_rgb(34_211_238/0.35)] disabled:opacity-50'
+// Hidden for the live demo, where files are uploaded by hand. The endpoint is still there.
+const SHOW_DEMO_BUTTON = false
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -152,18 +152,20 @@ export default function Landing() {
           />
         </div>
 
-        <div className="hero-rest mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Magnetic>
-            <button type="button" disabled={busy} onClick={() => start(api.analyzeSample)} className={SAMPLE_BUTTON}>
-              Try the demo dataset
-            </button>
-          </Magnetic>
-          <Magnetic>
-            <button type="button" disabled={busy} onClick={() => start(api.analyzeSample2018)} className={SAMPLE_BUTTON}>
-              Try the CIC-IDS2018 sample
-            </button>
-          </Magnetic>
-        </div>
+        {SHOW_DEMO_BUTTON && (
+          <div className="hero-rest mt-6">
+            <Magnetic>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => start(api.analyzeSample)}
+                className="rounded-full border border-cyan/60 bg-cyan/10 px-6 py-2.5 text-sm font-semibold text-cyan transition hover:bg-cyan/20 hover:shadow-[0_0_24px_rgb(34_211_238/0.35)] disabled:opacity-50"
+              >
+                Try the demo dataset
+              </button>
+            </Magnetic>
+          </div>
+        )}
 
         <p className="hero-rest num mt-5 min-h-5 text-xs text-muted">
           {!health && 'Connecting to the detection engine…'}

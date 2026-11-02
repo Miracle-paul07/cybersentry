@@ -274,7 +274,8 @@ def evaluation_mode(client):
     check("2018 sample has its original columns", "Dst Port" in sample.columns and "Label" in sample.columns)
     check("2018 sample under 5 MB", SAMPLE_2018.stat().st_size < 5_000_000, f"{SAMPLE_2018.stat().st_size / 1e6:.2f} MB")
 
-    s, _, _ = wait(client, client.post("/api/analyze/sample/ids2018").json()["job_id"])
+    check("2018 sample endpoint removed", client.post("/api/analyze/sample/ids2018").status_code == 404)
+    s, _, _ = wait(client, upload(client, SAMPLE_2018.name, SAMPLE_2018.read_bytes()).json()["job_id"])
     check("2018 sample scan", s["status"] == "done" and s["has_evaluation"], s["message"])
     e = client.get(f"/api/jobs/{s['job_id']}/evaluation").json()
     check("every row scored", e["rows"] == s["counts"]["rows_analysed"] and e["rows_excluded"] == 0, f"{e['rows']} rows")

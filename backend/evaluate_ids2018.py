@@ -236,10 +236,10 @@ def save_reports(metrics, out_dir=OUT_DIR):
     confusion_png(metrics, out_dir / "confusion_matrix.png")
 
 
-def make_demo_sample(unique, features, path=DEMO_CSV, data_dir=DATA_DIR):
+def make_demo_sample(unique, features, path=DEMO_CSV, data_dir=DATA_DIR, quota=None, seed=SEED):
     """A small labelled file with the original 2018 columns, exactly as they appear in the data."""
-    rng = np.random.default_rng(SEED)
-    quota = {**DEMO_QUOTA, "Benign": DEMO_ROWS - sum(DEMO_QUOTA.values())}
+    rng = np.random.default_rng(seed)
+    quota = quota or {**DEMO_QUOTA, "Benign": DEMO_ROWS - sum(DEMO_QUOTA.values())}
     wanted = set()
     for label, n in quota.items():
         pool = unique.loc[unique["raw_label"] == label, "row_hash"].to_numpy()
@@ -251,7 +251,7 @@ def make_demo_sample(unique, features, path=DEMO_CSV, data_dir=DATA_DIR):
             hit = clean["row_hash"].isin(wanted).to_numpy()
             parts.append(raw.loc[hit].assign(row_hash=clean.loc[hit, "row_hash"].to_numpy()))
     table = pd.concat(parts, ignore_index=True).drop_duplicates("row_hash").drop(columns="row_hash")
-    table = table.sample(frac=1, random_state=SEED).reset_index(drop=True)
+    table = table.sample(frac=1, random_state=seed).reset_index(drop=True)
     table.to_csv(path, index=False)
     return table
 

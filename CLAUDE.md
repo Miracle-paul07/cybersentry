@@ -40,8 +40,10 @@ Detection and reports are separate on purpose, because Groq's rate limit (8,000 
 
 - CIC-IDS2017 (CSV version).
 - Drop IP, port and timestamp columns to avoid leakage.
-- Datasets are never committed to git (`data/` is ignored). The exceptions are the small samples in `app/sample_data/`, which the website's sample scans need.
+- Datasets are never committed to git (`data/` is ignored). The exceptions are the small samples in `app/sample_data/`, which the demo-dataset endpoint and the tests need.
 - CSE-CIC-IDS2018 is for evaluation only, the models are never retrained on it. The CSVs go in `data/raw/ids2018/`. `src/ids2018.py` holds the column and label mapping and the metrics, `backend/evaluate_ids2018.py` writes `reports/ids2018/`, and `notebooks/06_cross_dataset_ids2018.ipynb` gives the same numbers. `reports/ids2018/summary.md` is written by hand, so update it if the results change.
+- `backend/make_demo_files.py` writes the upload files in `data/demo/` (gitignored). The 2017 ones only use `data/processed/test.parquet`, leaving out rows whose 32 features also appear in train or val. The landing page's demo button is hidden (`SHOW_DEMO_BUTTON` in `frontend/src/pages/Landing.jsx`), but its endpoint stays.
+- `backend/calibrate_ids2018.py` is analysis only. The website and saved models always use the threshold in `models/ml/stage1_meta.json`.
 - The website accepts 2017 and 2018 column names. A `Label` column is removed before the pipeline runs (`Job` in `backend/jobs.py`) and only used to score the results on the Model Evaluation page. Without one, that page doesn't appear. Labels the models have no class for are left out and listed, never guessed.
 
 ## Stack

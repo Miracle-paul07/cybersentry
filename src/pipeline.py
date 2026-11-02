@@ -64,13 +64,14 @@ class CyberSentryPipeline:
             return -self.s1_model.decision_function(self.pre_scaler.transform(X.astype(np.float64)))
         return self.s1_model.predict_proba(X)[:, 1]
 
-    def predict(self, df, already_prepared=False):
-        """Run both stages. Returns a copy of df with result columns added."""
+    def predict(self, df, already_prepared=False, threshold=None):
+        """Run both stages. Returns a copy of df with result columns added.
+        threshold overrides the saved Stage 1 threshold, for evaluation only."""
         if not already_prepared:
             df, _ = self.prepare(df)
         out = df.copy()
         score = self._stage1_scores(out)
-        suspicious = score >= self.s1_meta["threshold"]
+        suspicious = score >= (self.s1_meta["threshold"] if threshold is None else threshold)
 
         out["stage1_score"] = score
         out["suspicious"] = suspicious

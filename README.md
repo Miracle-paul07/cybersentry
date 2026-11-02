@@ -17,7 +17,7 @@ It starts the server and opens the website at <http://127.0.0.1:8000>. Press Ctr
 - `run.bat --rebuild` rebuilds the website first. Use this after changing anything in `frontend/`.
 - `run.bat --port 8001` uses another port if 8000 is taken.
 
-Click **Try the demo dataset** on the upload page for a quick run, **Try the CIC-IDS2018 sample** to see the models scored on data from another dataset, or upload your own CICFlowMeter-format CSV (CIC-IDS2017 or CSE-CIC-IDS2018 column names, up to 20 MB). If the file has a `Label` column, a Model Evaluation page appears. The models never see the labels.
+Upload a CICFlowMeter-format CSV (CIC-IDS2017 or CSE-CIC-IDS2018 column names, up to 20 MB). If the file has a `Label` column, a Model Evaluation page appears. The models never see the labels.
 
 ## First-time setup
 
@@ -74,7 +74,15 @@ The models trained on CIC-IDS2017 are also tested, without retraining, on CSE-CI
 venv\Scripts\python -m backend.evaluate_ids2018
 ```
 
-Results are in [reports/ids2018/](reports/ids2018/). Start with [summary.md](reports/ids2018/summary.md).
+Results are in [reports/ids2018/](reports/ids2018/). Start with [summary.md](reports/ids2018/summary.md). `python -m backend.calibrate_ids2018` adds the threshold calibration analysis, which changes nothing the website uses.
+
+## Demo files
+
+```bash
+venv\\Scripts\\python -m backend.make_demo_files
+```
+
+This writes labelled CSVs to `data/demo/` for uploading on the website: four from the held-out CIC-IDS2017 test split and one from CSE-CIC-IDS2018. `data/` isn't in git, so run it on the machine you present from, or copy the folder over. It needs `data/processed/` and `data/raw/ids2018/`.
 
 ## Streamlit backup
 
