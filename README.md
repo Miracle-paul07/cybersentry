@@ -4,6 +4,24 @@ Cybersecurity threat analysis prototype: network flow CSV -> anomaly detection -
 
 See [CLAUDE.md](CLAUDE.md) for the full pipeline, dataset rules and stack.
 
+![CyberSentry landing page](docs/screenshots/landing.jpg)
+
+## How it works
+
+1. **Stage 1, ML:** XGBoost marks each network flow normal or suspicious.
+2. **Stage 2, DL:** a 1D-CNN names the attack type (12 types) with a confidence score. Low-confidence results are flagged for analyst review.
+3. **Stage 3, GenAI:** a Groq-hosted LLM writes one incident report per attack type from an evidence packet built by the code. Every number in the report is checked against that evidence.
+
+On the held-out CIC-IDS2017 test split the full pipeline reaches 99.89% accuracy and 95.33% macro-F1. On CSE-CIC-IDS2018, which the models never saw, detection drops sharply; see [reports/ids2018/](reports/ids2018/) for the cross-dataset results.
+
+## Screenshots
+
+| Live scan | Security overview |
+|---|---|
+| ![Live scan](docs/screenshots/live-scan.jpg) | ![Security overview](docs/screenshots/overview.jpg) |
+| **Incident report** | **Model evaluation** |
+| ![Incident report](docs/screenshots/incident-report.jpg) | ![Model evaluation](docs/screenshots/model-evaluation.jpg) |
+
 ## Run it
 
 On Windows, double-click **`run.bat`**, or run it from a terminal:
@@ -106,5 +124,13 @@ venv\Scripts\streamlit run app/app.py
 
 ## Datasets
 
-- CIC-IDS2017, used for training and testing.
+- CIC-IDS2017, used for training and testing. Sharafaldin, Lashkari & Ghorbani, ICISSP 2018. <https://www.unb.ca/cic/datasets/ids-2017.html>
 - CSE-CIC-IDS2018, used for evaluation only. Sharafaldin, Lashkari & Ghorbani, "Toward Generating a New Intrusion Detection Dataset and Intrusion Traffic Characterization", ICISSP 2018. <https://registry.opendata.aws/cse-cic-ids2018>
+
+## Team
+
+Built as a B.E. (CSE-AIML) mini project at Methodist College of Engineering and Technology, Hyderabad, by Samuel Miracle Paul G, Aligi Anjali and Mohammed Abdul Hannan, under the guidance of Dr. Shahana Tanveer.
+
+## License
+
+[MIT](LICENSE)
