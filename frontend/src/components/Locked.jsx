@@ -9,13 +9,13 @@ export default function Locked({ children }) {
   if (ready) return children
 
   return (
-    <section className="mx-auto flex max-w-xl flex-col items-center px-4 py-20 text-center">
+    <section className="mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center">
       <div className="radar relative h-40 w-40 overflow-hidden rounded-full border border-cyan/25" aria-hidden="true">
         <div className="radar-sweep absolute inset-0 rounded-full" />
         <span className="absolute top-1/2 left-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan shadow-[0_0_10px_var(--color-cyan)]" />
       </div>
       <p className="num mt-8 text-xs tracking-widest text-cyan uppercase">No telemetry received</p>
-      <h1 className="mt-3 font-display text-2xl font-bold sm:text-3xl">Awaiting network data</h1>
+      <h1 className="mt-3 font-display text-[clamp(3.5rem,9vw,8rem)] leading-[0.9] font-bold uppercase">Awaiting network data</h1>
       <p className="mt-4 text-muted">
         {running
           ? 'An analysis is still running. Results unlock as soon as detection finishes.'
@@ -24,7 +24,7 @@ export default function Locked({ children }) {
       <Magnetic className="mt-8">
         <Link
           to={running ? `/scan/${jobId}` : '/'}
-          className="inline-block rounded-full border border-cyan/60 bg-cyan/10 px-6 py-2.5 text-sm font-semibold text-cyan transition hover:bg-cyan/20 hover:shadow-[0_0_24px_rgb(34_211_238/0.35)]"
+          className="btn"
         >
           {running ? 'Watch the live scan' : 'Upload network data'}
         </Link>

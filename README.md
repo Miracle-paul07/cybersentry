@@ -113,7 +113,7 @@ venv\Scripts\streamlit run app/app.py
 ## Layout
 
 - `backend/` - FastAPI server: upload, background jobs with live progress, results, reports
-- `frontend/` - website (React, Vite, Tailwind, three.js, GSAP, ECharts)
+- `frontend/` - website (React, Vite, Tailwind, WebGL, GSAP, ECharts)
 - `src/` - pipeline, model and GenAI report modules
 - `app/` - Streamlit backup, plus the risk rules and PDF/TXT export the backend reuses
 - `models/` - trained models

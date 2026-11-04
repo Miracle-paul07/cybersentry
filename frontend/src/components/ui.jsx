@@ -1,12 +1,20 @@
 // Small building blocks shared by the result pages
-import { CountUp, TiltCard } from './fx'
+import { useLocation } from 'react-router'
+import { CountUp, Scramble } from './fx'
+
+const PAGE_NUMBER = { overview: '01', detection: '02', analysis: '03', reports: '04', evaluation: '05' }
 
 export function PageHeader({ eyebrow, title, children }) {
+  const number = PAGE_NUMBER[useLocation().pathname.split('/')[1]]
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p className="num text-xs tracking-widest text-cyan uppercase">{eyebrow}</p>
-        <h1 className="mt-2 font-display text-2xl font-bold sm:text-3xl">{title}</h1>
+    <header className="page-header relative mb-8 flex flex-wrap items-end justify-between gap-6 pb-6">
+      <div className="min-w-0">
+        <p className="num text-xs tracking-widest text-cyan uppercase">
+          <Scramble text={number ? `[ ${number} ]  ${eyebrow}` : eyebrow} onMount className="whitespace-pre-wrap" />
+        </p>
+        <h1 className="mt-3 overflow-hidden font-display text-[clamp(3.5rem,10vw,9.5rem)] leading-[0.88] font-bold uppercase">
+          <span className="rise block">{title}</span>
+        </h1>
       </div>
       {children}
     </header>
@@ -15,8 +23,8 @@ export function PageHeader({ eyebrow, title, children }) {
 
 export function Panel({ title, note, children, className = '' }) {
   return (
-    <div className={`panel rounded-xl p-5 ${className}`}>
-      {title && <h2 className="font-semibold">{title}</h2>}
+    <div className={`panel ticks p-6 ${className}`}>
+      {title && <h2 className="num text-[11px] tracking-[0.2em] text-cyan uppercase">{title}</h2>}
       {note && <p className="mt-1 text-xs text-muted">{note}</p>}
       <div className={title || note ? 'mt-4' : ''}>{children}</div>
     </div>
@@ -26,12 +34,12 @@ export function Panel({ title, note, children, className = '' }) {
 // A number value counts up; pass `format` for anything that isn't a plain count
 export function Stat({ label, value, format, tone = 'text-text' }) {
   return (
-    <TiltCard className="glass rounded-xl p-4" data-threat={tone === 'text-red-soft' || undefined}>
-      <p className="text-xs tracking-wider text-muted uppercase">{label}</p>
-      <p className={`num mt-2 text-2xl font-semibold sm:text-3xl ${tone}`}>
+    <div className="cell" data-threat={tone === 'text-red-soft' || undefined}>
+      <p className="num text-[11px] tracking-[0.16em] text-muted uppercase">{label}</p>
+      <p className={`mt-3 font-display text-[clamp(3rem,5.5vw,5.5rem)] leading-none font-bold ${tone}`}>
         {typeof value === 'number' ? <CountUp value={value} format={format} /> : value}
       </p>
-    </TiltCard>
+    </div>
   )
 }
 
@@ -41,7 +49,7 @@ export function Loading() {
 
 export function ErrorNote({ children }) {
   return (
-    <p role="alert" className="rounded-lg border border-red/50 bg-red/10 p-4 text-sm text-red-soft">
+    <p role="alert" className="border border-red/50 bg-red/10 p-4 text-sm text-red-soft">
       {children}
     </p>
   )
@@ -52,7 +60,7 @@ export function Warnings({ items }) {
   return (
     <div className="mb-4 space-y-2">
       {items.map((w) => (
-        <p key={w} className="rounded-lg border border-amber/40 bg-amber/10 px-4 py-2 text-sm">
+        <p key={w} className="border border-amber/40 bg-amber/10 px-4 py-2 text-sm">
           {w}
         </p>
       ))}
@@ -62,8 +70,8 @@ export function Warnings({ items }) {
 
 export function EmptyState({ title, children }) {
   return (
-    <div className="glass rounded-xl p-10 text-center">
-      <p className="font-display text-lg font-bold text-cyan">{title}</p>
+    <div className="glass ticks p-12 text-center">
+      <p className="font-display text-5xl font-bold text-cyan uppercase">{title}</p>
       <p className="mt-2 text-sm text-muted">{children}</p>
     </div>
   )

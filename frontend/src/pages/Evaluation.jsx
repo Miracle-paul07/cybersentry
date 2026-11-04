@@ -27,12 +27,12 @@ export default function Evaluation() {
   const heatmap = useMemo(() => data?.multiclass && confusionHeatmap(data.multiclass.confusion), [data])
 
   if (!hasEvaluation) return <Navigate to="/overview" replace />
-  if (error) return <div className="mx-auto max-w-6xl px-4 py-12"><ErrorNote>{error}</ErrorNote></div>
+  if (error) return <div className="mx-auto max-w-[1560px] px-6 py-12"><ErrorNote>{error}</ErrorNote></div>
   if (!data) return <Loading />
 
   if (!data.multiclass) {
     return (
-      <section className="mx-auto max-w-6xl px-4 py-10">
+      <section className="mx-auto max-w-[1560px] px-6 py-10">
         <PageHeader eyebrow={`Model evaluation · ${data.filename}`} title="Model Evaluation" />
         <Warnings items={job.warnings} />
         <EmptyState title="Nothing to score">None of the labels in this file match a class the models know.</EmptyState>
@@ -45,7 +45,7 @@ export default function Evaluation() {
   const matrix = m.confusion
 
   return (
-    <Reveal as="section" className="mx-auto max-w-6xl px-4 py-10">
+    <Reveal as="section" className="mx-auto max-w-[1560px] px-6 py-10">
       <PageHeader eyebrow={`Model evaluation · ${data.filename}`} title="Model Evaluation" />
       <p className="-mt-3 mb-4 max-w-3xl text-sm text-muted">
         This file has a Label column. The models never saw it: it was set aside before prediction and is only used to
@@ -53,8 +53,8 @@ export default function Evaluation() {
       </p>
       <Warnings items={job.warnings} />
 
-      <h2 className="mb-3 font-semibold">Attack vs benign (Stage 1)</h2>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+      <h2 className="mb-4 font-display text-5xl leading-none font-bold uppercase">Attack vs benign <span className="text-muted">/ Stage 1</span></h2>
+      <div data-stagger className="cells grid-cols-2 md:grid-cols-5">
         <Metric label="Accuracy" value={s.accuracy} />
         <Metric label="Precision" value={s.precision} />
         <Metric label="Recall" value={s.recall} />
@@ -71,8 +71,8 @@ export default function Evaluation() {
         don't, so compare those between files.
       </p>
 
-      <h2 className="mt-8 mb-3 font-semibold">Which attack (full pipeline)</h2>
-      <div className="grid grid-cols-2 gap-4">
+      <h2 className="mt-12 mb-4 font-display text-5xl leading-none font-bold uppercase">Which attack <span className="text-muted">/ Full pipeline</span></h2>
+      <div data-stagger className="cells grid-cols-2">
         <Metric label="Accuracy" value={m.accuracy} />
         <Metric label="Macro-F1" value={m.macro_f1} />
       </div>

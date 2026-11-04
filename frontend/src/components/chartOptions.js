@@ -4,8 +4,8 @@ import { RISK_COLORS, RISK_LEVELS, fmt, fmtValue } from '../risk'
 
 const TEXT = '#e6ebff'
 const MUTED = '#8a94b3'
-const LINE = '#1c2540'
-const SURFACE = '#0b1020'
+const LINE = '#1a2236'
+const SURFACE = '#090d18'
 const MONO = '"JetBrains Mono Variable", ui-monospace, Consolas, monospace'
 
 export const SERIES = { threat: RISK_COLORS.Critical, system: RISK_COLORS.Low }
@@ -13,7 +13,7 @@ export const SERIES = { threat: RISK_COLORS.Critical, system: RISK_COLORS.Low }
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 
 const tooltip = {
-  backgroundColor: '#10172b',
+  backgroundColor: '#0e1424',
   borderColor: LINE,
   borderWidth: 1,
   padding: [8, 12],
@@ -165,7 +165,7 @@ export function confusionHeatmap({ true: rows, predicted, matrix }) {
       min: 0,
       max: 1,
       dimension: 2,
-      inRange: { color: ['#10172b', '#0e4a5c', '#22d3ee'] },
+      inRange: { color: ['#0e1424', '#0e4a5c', '#22d3ee'] },
     },
     xAxis: {
       type: 'category',
