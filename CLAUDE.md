@@ -34,6 +34,8 @@ Detection and reports are separate on purpose, because Groq's rate limit (8,000 
 - `call_groq` uses `reasoning_effort="low"`: the default spends about 1,300 extra tokens per report and can hit the output limit before the JSON is finished.
 - A failing Groq call retries with backoff (`call_groq`), following Groq's `Retry-After`. A 429 costs waiting time rather than a retry. After 2 attack types in a row fail, the remaining types go straight to the template. Starting a new scan does the same for the older scan's remaining reports.
 - If the grounding check flags a number in an AI report, Groq gets one rewrite that names the bad number (`rewrite_if_ungrounded`). If it is still flagged, the report is shown with the warning.
+- AI text gets feature names rewritten to the evidence's exact spelling (`normalise_feature_names`) before the grounding check. Only names change, never numbers.
+- In PDFs, each section moves to the next page whole if it doesn't fit (`report_to_pdf` in `app/report_export.py`).
 - Report failures must never fail the job.
 
 ## Dataset

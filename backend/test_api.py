@@ -8,8 +8,10 @@ import io
 import json
 import os
 import sys
+import re
 import threading
 import time
+import zlib
 from contextlib import contextmanager
 from types import SimpleNamespace
 
@@ -19,7 +21,9 @@ from fastapi.testclient import TestClient
 from . import PROJECT_ROOT, reports
 from .main import app, state
 
-from genai_report import grounding_check, retry_wait, template_narrative  # noqa: E402  (src/ on sys.path via backend/__init__.py)
+from genai_report import (build_evidence, generate_report, grounding_check, normalise_feature_names,  # noqa: E402  (src/ on sys.path via backend/__init__.py)
+                          render_markdown, retry_wait, template_narrative)
+from report_export import report_to_pdf, report_to_txt  # noqa: E402
 
 ONLINE = "--online" in sys.argv
 DEMO = PROJECT_ROOT / "app" / "sample_data" / "demo_flows.csv"
@@ -335,6 +339,85 @@ def evaluation_mode(client):
     check("single class: undefined metrics are empty", e8["recall"] is None and e8["roc_auc"] is None and e8["fpr"] is not None)
 
 
+def pdf_pages(data):
+    """The text lines on each page of a PDF."""
+    streams = re.findall(rb"stream\n(.*?)\nendstream", data, re.S)
+    return [re.findall(r"\(((?:\\.|[^\\)])*)\) Tj", zlib.decompress(x).decode("latin-1")) for x in streams]
+
+
+def sample_report(actions=None, what_happened="It happened.", key_evidence=None):
+    flows = pd.DataFrame({"Bwd IAT Total": [70514.0] * 4, "confidence": [0.9] * 4, "needs_review": [False] * 4})
+    evidence = build_evidence(flows, "Bot", {"Bwd IAT Total": 3.0}, 100)
+    narrative = {**template_narrative(evidence), "what_happened": what_happened}
+    narrative["recommended_actions"] = actions or narrative["recommended_actions"]
+    narrative["key_evidence"] = key_evidence or narrative["key_evidence"]
+    return evidence, render_markdown(evidence, narrative, grounding_check(narrative, evidence), "template (no LLM)")
+
+
+def report_polish():
+    print("Feature names in AI text")
+    names = ["Bwd IAT Total", "Fwd IAT Std", "Flow IAT Max", "Init_Win_bytes_backward", "Flow Bytes/s",
+             "min_seg_size_forward", "Fwd Packet Length Max"]
+    evidence = {"most_unusual_features_vs_normal": [{"feature": f} for f in names]}
+    clean = lambda text: normalise_feature_names({"t": text}, evidence)["t"]  # noqa: E731
+    for text, exact in [("Back-ward IAT rose", "Bwd IAT rose"), ("backward iat total", "Bwd IAT Total"),
+                        ("forward IAT standard deviation", "Fwd IAT Std"),
+                        ("flow inter\u2011arrival time max", "Flow IAT Max"),
+                        ("initial window bytes backward", "Init_Win_bytes_backward"),
+                        ("flow bytes per second", "Flow Bytes/s"), ("minimum segment size forward", "min_seg_size_forward"),
+                        ("forward packet length maximum", "Fwd Packet Length Max"),
+                        ("Bwd IAT Total of 70514 microseconds", "Bwd IAT Total of 70514 microseconds")]:
+        check(f"{text!r} -> {exact!r}", clean(text) == exact, clean(text))
+    for text in ["few forward packets and a short packet length", "inter-arrival times in the backward direction",
+                 "Bwd Packets/s was high", "flow bytes were low"]:
+        check(f"left alone: {text!r}", clean(text) == text, clean(text))
+    fixed = normalise_feature_names({"a": ["backward iat total"], "b": "flow bytes per second"}, evidence)
+    check("lists and every field are cleaned", fixed == {"a": ["Bwd IAT Total"], "b": "Flow Bytes/s"})
+
+    report_evidence, _ = sample_report()
+    answer = {**template_narrative(report_evidence), "summary": "The backward iat total reached 70514 microseconds."}
+    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(answer)))])
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: reply)))
+    markdown, narrative, grounding, _ = generate_report(report_evidence, client=client)
+    check("cleaned before the report is written", "Bwd IAT Total reached" in narrative["summary"]
+          and "Bwd IAT Total reached" in markdown and grounding["grounded"])
+
+    print("PDF and TXT layout")
+    evidence, markdown = sample_report()
+    args = (markdown, evidence["incident_id"], "High", "Bot")
+    text = "\n".join(sum(pdf_pages(report_to_pdf(*args)), []))
+    plain = report_to_txt(*args)
+    check("PDF shows each detail once", all(text.count(x) == 1 for x in ("Incident ID:", "Attack type:", "Severity:", "Generated:")))
+    check("TXT shows each detail once", "Incident ID:" not in plain
+          and all(plain.count(x) == 1 for x in ("Incident ID :", "Attack type :", "Severity    :", "Generated   :")))
+    check("Generated time kept", evidence["generated_at"] in text and evidence["generated_at"] in plain)
+    check("markdown keeps its own line", "**Incident ID:**" in markdown)
+
+    # Longer and longer text moves each section across every possible position on the page
+    actions = ["Action alpha", "Action bravo", "Action charlie", "Action delta", "Action echo"]
+    bullets = ["Bullet one", "Bullet two", "Bullet three", "Bullet four"]
+    split, blank, moved = [], [], False
+    for lines in range(0, 70):
+        _, long_report = sample_report(actions, "\n\n".join(["Filler line."] * lines), bullets)
+        pages = pdf_pages(report_to_pdf(long_report, "CS-1", "High", "Bot"))
+        where = lambda line: next(i for i, page in enumerate(pages) if line in page)  # noqa: E731
+        if {where("Recommended actions")} != {where(a) for a in actions}:
+            split.append(lines)
+        if {where("Key evidence")} != {where(b) for b in bullets} | {where("Feature")}:
+            split.append(lines)
+        blank += [lines for page in pages if len(page) < 2]
+        moved = moved or where("Recommended actions") > where("What happened")
+    check("headings stay with their lists, at every length", not split, f"split at {split[:5]}" if split else "")
+    check("no blank pages", not blank, str(blank[:5]))
+    check("a section really did move page", moved)
+
+    _, huge = sample_report(actions, "\n\n".join(f"Line {i}." for i in range(150)))
+    pages = pdf_pages(report_to_pdf(huge, "CS-1", "High", "Bot"))
+    every = sum(pages, [])
+    check("a section longer than a page still prints", len(pages) > 2 and all(f"Line {i}." in every for i in range(150))
+          and all(len(page) > 1 for page in pages), f"{len(pages)} pages")
+
+
 def main():
     if not ONLINE:
         reports.groq_reachable = lambda timeout=2.0: False   # simulate offline demo
@@ -348,6 +431,8 @@ def main():
           grounding_check({"t": "microseconds 99 times"}, ev)["unsupported_numbers"] == ["99"])
     check("invented IP caught",
           "10.0.0.5" in grounding_check({"t": "source—10.0.0.5"}, ev)["unsupported_numbers"])
+
+    report_polish()
 
     with TestClient(app) as client:
         print("Health")
