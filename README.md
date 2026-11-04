@@ -58,7 +58,7 @@ Never commit `.env`.
 
 ## Running offline (for a demo)
 
-Run `run.bat` once while online, so the website is built. After that, everything except Groq works with no internet: all fonts, 3D and charts are bundled.
+Run `run.bat` once while online, so the website is built. After that, everything except Groq works with no internet: all fonts, animations and charts are bundled.
 
 Without internet or without a key, CyberSentry detects this and writes template reports from the same evidence, and the website shows a notice saying so.
 
