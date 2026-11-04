@@ -130,20 +130,20 @@ export default function Scan() {
         : 'Analysis in progress'
 
   return (
-    <Reveal as="section" className="mx-auto max-w-5xl px-4 py-12">
+    <Reveal as="section" className="mx-auto max-w-[1560px] px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="min-w-0">
           <p className="num text-xs tracking-widest text-cyan uppercase">{headline}</p>
-          <h1 className="mt-2 font-display text-xl font-bold break-all sm:text-2xl">{snap?.filename ?? 'Starting…'}</h1>
+          <h1 className="mt-2 font-display text-4xl leading-none font-bold break-all uppercase sm:text-6xl">{snap?.filename ?? 'Starting…'}</h1>
         </div>
-        <p className={`num text-5xl font-semibold sm:text-6xl ${failed ? 'text-red-soft' : 'text-cyan'}`}>
+        <p className={`font-display text-[clamp(5.5rem,14vw,12rem)] leading-[0.8] font-bold ${failed ? 'text-red-soft' : 'text-cyan'}`}>
           {failed ? '!' : <CountUp value={percent} duration={0.4} format={(v) => `${Math.round(v)}%`} />}
         </p>
       </header>
 
-      <div className="mt-6 h-1 overflow-hidden rounded-full bg-line">
+      <div className="mt-6 h-0.5 overflow-hidden bg-line">
         <div
-          className={`h-full rounded-full transition-all duration-500 ${failed ? 'bg-red' : 'bg-cyan shadow-[0_0_12px_rgb(34_211_238/0.8)]'}`}
+          className={`h-full transition-all duration-500 ${failed ? 'bg-red' : 'bg-cyan shadow-[0_0_12px_rgb(34_211_238/0.8)]'}`}
           style={{ width: `${failed ? 100 : percent}%` }}
         />
       </div>
@@ -173,7 +173,7 @@ export default function Scan() {
           <Magnetic>
             <Link
               to="/overview"
-              className="inline-block rounded-full border border-cyan/60 bg-cyan/10 px-6 py-2.5 text-sm font-semibold text-cyan transition hover:bg-cyan/20 hover:shadow-[0_0_24px_rgb(34_211_238/0.35)]"
+              className="btn"
             >
               View results
             </Link>
@@ -188,13 +188,13 @@ export default function Scan() {
       )}
 
       {shown >= 3 && snap?.warnings?.map((w) => (
-        <p key={w} className="mt-3 rounded-lg border border-amber/40 bg-amber/10 px-4 py-2 text-sm">
+        <p key={w} className="mt-3 border border-amber/40 bg-amber/10 px-4 py-2 text-sm">
           {w}
         </p>
       ))}
 
       {failed && (
-        <div role="alert" className="mt-6 rounded-xl border border-red/60 bg-panel p-4">
+        <div role="alert" className="mt-6 border border-red/60 bg-panel p-4">
           <p className="text-red-soft">{snap.error}</p>
           <Link to="/" className="mt-3 inline-block text-cyan underline">
             Upload another file
@@ -204,8 +204,8 @@ export default function Scan() {
 
       {shown >= 2 && threatTypes.length > 0 && (
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <div className="glass rounded-xl p-5" data-threat>
-            <h2 className="font-semibold">Threat feed</h2>
+          <div className="glass p-5" data-threat>
+            <h2 className="num text-[11px] tracking-[0.2em] text-red-soft uppercase">Threat feed</h2>
             <ul className="mt-3 space-y-1.5 text-sm">
               {threatTypes.map(([type, count]) => (
                 <li key={type} className="flex items-center gap-2">
@@ -218,8 +218,8 @@ export default function Scan() {
           </div>
 
           {shown >= 3 && (
-            <div className="glass rounded-xl p-5">
-              <h2 className="font-semibold">Incident reports</h2>
+            <div className="glass p-5">
+              <h2 className="num text-[11px] tracking-[0.2em] text-cyan uppercase">Incident reports</h2>
               <ul className="mt-3 space-y-1.5 text-sm">
                 {snap.reports.map((r) => (
                   <li key={r.attack_type} className={`flex items-center gap-2 ${r.status === 'queued' ? 'text-muted' : ''}`}>
@@ -247,8 +247,8 @@ function Stage({ stage, index, state, counts, seconds, next }) {
   return (
     <li className="flex gap-4 md:block" aria-current={state === 'active' ? 'step' : undefined}>
       <div className="flex flex-col items-center md:flex-row">
-        <span className={`num relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-500 ${ring}`}>
-          {state === 'active' && <span className="absolute inset-0 animate-ping rounded-full border border-cyan/60" aria-hidden="true" />}
+        <span className={`num relative flex h-11 w-11 shrink-0 items-center justify-center border text-sm font-semibold transition-all duration-500 ${ring}`}>
+          {state === 'active' && <span className="absolute inset-0 animate-ping border border-cyan/60" aria-hidden="true" />}
           {state === 'done' ? '✓' : state === 'error' ? '×' : `0${index + 1}`}
         </span>
         {next !== null && (
@@ -260,11 +260,11 @@ function Stage({ stage, index, state, counts, seconds, next }) {
       </div>
 
       <div className="min-w-0 pb-2 md:mt-4 md:pr-5">
-        <h2 className={`font-semibold transition-colors ${state === 'pending' ? 'text-muted' : ''}`}>{stage.label}</h2>
+        <h2 className={`font-display text-2xl leading-none font-bold uppercase transition-colors ${state === 'pending' ? 'text-muted' : ''}`}>{stage.label}</h2>
         <dl className="mt-2 space-y-1 text-xs">
           {stage.stats(counts ?? {}).map(([label, value]) => (
             <div key={label} className="flex items-baseline gap-2">
-              <dd className={`num text-base ${state === 'pending' ? 'text-muted' : ''}`}>
+              <dd className={`font-display text-3xl leading-none font-bold ${state === 'pending' ? 'text-muted' : ''}`}>
                 {state === 'pending' ? '—' : <CountUp value={value ?? 0} duration={0.6} />}
               </dd>
               <dt className="text-muted">{label}</dt>

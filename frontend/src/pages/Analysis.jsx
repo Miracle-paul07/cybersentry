@@ -23,12 +23,12 @@ export default function Analysis() {
       .catch((e) => setError(e.message))
   }, [jobId])
 
-  if (error) return <div className="mx-auto max-w-6xl px-4 py-12"><ErrorNote>{error}</ErrorNote></div>
+  if (error) return <div className="mx-auto max-w-[1560px] px-6 py-12"><ErrorNote>{error}</ErrorNote></div>
   if (!attacks) return <Loading />
 
   if (attacks.length === 0) {
     return (
-      <section className="mx-auto max-w-6xl px-4 py-10">
+      <section className="mx-auto max-w-[1560px] px-6 py-10">
         <PageHeader eyebrow="Threat analysis" title="Attack patterns" />
         <EmptyState title="Nothing to analyse">No attacks were detected in this file.</EmptyState>
       </section>
@@ -37,10 +37,10 @@ export default function Analysis() {
   if (!type) return <Navigate to={`/analysis/${encodeURIComponent(attacks[0].attack_type)}`} replace />
 
   return (
-    <Reveal as="section" className="mx-auto max-w-6xl px-4 py-10">
+    <Reveal as="section" className="mx-auto max-w-[1560px] px-6 py-10">
       <PageHeader eyebrow="Threat analysis" title="Attack patterns" />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div data-stagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {attacks.map((a) => {
           const active = a.attack_type === type
           return (
@@ -52,12 +52,12 @@ export default function Analysis() {
               aria-pressed={active}
               data-threat={a.severity === 'Critical' || undefined}
               onClick={() => navigate(`/analysis/${encodeURIComponent(a.attack_type)}`, { replace: true })}
-              className={`flex flex-col rounded-xl border p-4 text-left transition-colors ${
+              className={`flex flex-col border p-4 text-left transition-colors ${
                 active ? 'border-cyan bg-cyan/10 shadow-[0_0_20px_rgb(34_211_238/0.15)]' : 'border-line bg-panel hover:border-cyan/50'
               }`}
             >
               <span className="flex items-center justify-between gap-2">
-                <span className="font-semibold">{a.attack_type}</span>
+                <span className="font-display text-2xl leading-none font-bold uppercase">{a.attack_type}</span>
                 <RiskBadge level={a.severity} />
               </span>
               <span className="mt-2 line-clamp-2 block text-xs text-muted">{a.description}</span>
@@ -108,17 +108,17 @@ function AttackDetail({ jobId, type }) {
   return (
     <div className="mt-8">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="font-display text-xl font-bold">{data.attack_type}</h2>
+        <h2 className="font-display text-6xl leading-none font-bold uppercase">{data.attack_type}</h2>
         <RiskBadge level={data.severity} />
         {data.mitre.map((m) => (
-          <span key={m} className="num rounded border border-line bg-panel px-2 py-0.5 text-xs text-muted">
+          <span key={m} className="num border border-line bg-panel px-2 py-0.5 text-xs text-muted">
             {m}
           </span>
         ))}
       </div>
       <p className="mt-2 max-w-3xl text-sm text-muted">{data.description}</p>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="cells mt-4 grid-cols-2 md:grid-cols-4">
         <Stat label="Flows" value={data.count} />
         <Stat label="Share of traffic" value={data.share_pct} format={(v) => `${v.toFixed(2)}%`} />
         <Stat
@@ -162,7 +162,7 @@ function AttackDetail({ jobId, type }) {
                   type="button"
                   aria-label={`Remove ${f}`}
                   onClick={() => setSelected(selected.filter((x) => x !== f))}
-                  className="rounded-full border border-line bg-panel-2 px-3 py-1 text-xs hover:border-red/60"
+                  className="border border-line bg-panel-2 px-3 py-1 text-xs hover:border-red/60"
                 >
                   {f} <span aria-hidden="true" className="text-muted">×</span>
                 </button>
@@ -172,7 +172,7 @@ function AttackDetail({ jobId, type }) {
                 id="add-feature"
                 value=""
                 onChange={(e) => e.target.value && setSelected([...selected, e.target.value])}
-                className="rounded-full border border-line bg-panel px-3 py-1 text-xs focus:border-cyan focus:outline-none"
+                className="border border-line bg-panel px-3 py-1 text-xs focus:border-cyan focus:outline-none"
               >
                 <option value="">Add feature…</option>
                 {available.map((r) => (

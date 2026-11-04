@@ -301,6 +301,66 @@ def template_narrative(evidence):
 
 
 # ---------------------------------------------------------------------------
+# Feature names: the LLM's wording -> the exact names in the evidence
+# ---------------------------------------------------------------------------
+_GAP = r"[\s_\-\u2010-\u2015]"      # includes the unicode hyphens the LLM sometimes writes
+_WORDS = {
+    "bwd": rf"(?:bwd|back{_GAP}*ward)", "backward": rf"(?:bwd|back{_GAP}*ward)",
+    "fwd": rf"(?:fwd|for{_GAP}*ward)", "forward": rf"(?:fwd|for{_GAP}*ward)",
+    "iat": rf"(?:iat|inter{_GAP}*arrival{_GAP}+times?)",
+    "std": rf"(?:std\.?|std\.?{_GAP}+dev\.?|standard{_GAP}+deviation)",
+    "var": "(?:var|variance)", "variance": "(?:var|variance)",
+    "mean": "(?:mean|average|avg)",
+    "max": "(?:max|maximum)", "min": "(?:min|minimum)",
+    "total": "(?:total|tot)",
+    "packet": "(?:packets?|pkts?)", "packets": "(?:packets?|pkts?)",
+    "length": "(?:length|len)",
+    "bytes": "(?:bytes?|byts)",
+    "init": "(?:init|initial)", "win": "(?:win|window)",
+    "seg": "(?:seg|segment)",
+    "flag": "flags?", "count": "(?:count|cnt)",
+}
+
+
+def _name_pattern(words, per_second=False):
+    body = f"{_GAP}+".join(_WORDS.get(w.lower(), re.escape(w)) for w in words)
+    if per_second:
+        body += rf"(?:/s|{_GAP}+per{_GAP}+second)"
+    return re.compile(rf"(?<![\w/]){body}(?![\w/])", re.IGNORECASE)
+
+
+def _name_rules(features):
+    """(pattern, exact name) pairs, longest first. Whole names, plus "Bwd IAT"-style short forms."""
+    rules = {}
+    for name in features:
+        stem = name[:-2] if name.endswith("/s") else name
+        words = re.split(r"[ _]", stem)
+        rules[name] = _name_pattern(words, per_second=name.endswith("/s"))
+        # Only IAT gets a short form: "packet length" alone is ordinary English, "backward IAT" isn't
+        lower = [w.lower() for w in words]
+        if "iat" in lower:
+            short = words[:lower.index("iat") + 1]
+            if len(short) > 1 and len(short) < len(words):
+                rules[" ".join(short)] = _name_pattern(short)
+    return [(rules[k], k) for k in sorted(rules, key=len, reverse=True)]
+
+
+def normalise_feature_names(narrative, evidence):
+    """Rewrite feature names in the LLM's text to the evidence's exact spelling. Only touches names."""
+    rules = _name_rules([r["feature"] for r in evidence["most_unusual_features_vs_normal"]])
+
+    def fix(value):
+        if isinstance(value, list):
+            return [fix(v) for v in value]
+        if isinstance(value, str):
+            for pattern, exact in rules:
+                value = pattern.sub(lambda _: exact, value)
+        return value
+
+    return {k: fix(v) for k, v in narrative.items()}
+
+
+# ---------------------------------------------------------------------------
 # Grounding check
 # ---------------------------------------------------------------------------
 _NUM = re.compile(r"(?<![\w.])-?\d[\d,]*(?:\.\d+)?")
@@ -382,6 +442,7 @@ def rewrite_if_ungrounded(narrative, check, evidence, model, client):
     except Exception as e:
         print(f"[genai] Rewrite failed, keeping the flagged report: {e}", flush=True)
         return narrative, check
+    new_narrative = normalise_feature_names(new_narrative, evidence)
     new_check = grounding_check(new_narrative, evidence)
     if len(new_check["unsupported_numbers"]) < len(check["unsupported_numbers"]):
         return new_narrative, new_check
@@ -394,7 +455,7 @@ def generate_report(evidence, use_llm=True, model=DEFAULT_MODEL, client=None):
     narrative = None
     if use_llm and (client is not None or os.environ.get("GROQ_API_KEY")):
         try:
-            narrative = call_groq(evidence, model=model, client=client)
+            narrative = normalise_feature_names(call_groq(evidence, model=model, client=client), evidence)
             source = f"Groq {model}"
         except Exception as e:
             print(f"[genai] LLM failed, using template: {e}", flush=True)

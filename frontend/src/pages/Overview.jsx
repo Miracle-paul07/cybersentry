@@ -37,7 +37,7 @@ export default function Overview() {
     [navigate],
   )
 
-  if (error) return <div className="mx-auto max-w-6xl px-4 py-12"><ErrorNote>{error}</ErrorNote></div>
+  if (error) return <div className="mx-auto max-w-[1560px] px-6 py-12"><ErrorNote>{error}</ErrorNote></div>
   if (!data) return <Loading />
 
   const k = data.kpis
@@ -46,20 +46,22 @@ export default function Overview() {
   return (
     <>
     {threats && <ScanWave jobId={jobId} />}
-    <Reveal as="section" className="mx-auto max-w-6xl px-4 py-10">
+    <Reveal as="section" className="mx-auto max-w-[1560px] px-6 py-10">
       <PageHeader eyebrow={`Security overview · ${data.filename}`} title="Network status" />
 
       <div
         role="status"
         data-threat={threats || undefined}
-        className={`mb-4 flex flex-wrap items-center gap-3 rounded-xl border p-4 ${
+        className={`mb-6 flex flex-wrap items-center gap-5 border p-6 ${
           threats ? 'pulse-red border-red/60 bg-red/10' : 'border-cyan/50 bg-cyan/10 shadow-[0_0_24px_rgb(34_211_238/0.12)]'
         }`}
       >
         <span className={`h-3 w-3 rounded-full ${threats ? 'animate-pulse bg-red shadow-[0_0_12px_var(--color-red)]' : 'bg-cyan shadow-[0_0_12px_var(--color-cyan)]'}`} />
         <div>
-          <p className="font-display text-lg font-bold">{threats ? 'Threats detected' : 'All clear'}</p>
-          <p className="text-sm text-muted">
+          <p className={`font-display text-[clamp(2.75rem,6.5vw,6rem)] leading-[0.95] font-bold uppercase ${threats ? 'text-red-soft' : 'text-cyan'}`}>
+            {threats ? 'Threats detected' : 'All clear'}
+          </p>
+          <p className="mt-2 text-sm text-muted">
             {threats
               ? `${fmt(k.threats)} flows classified as malicious, across ${k.attack_types} attack type${k.attack_types === 1 ? '' : 's'}.`
               : 'No malicious flows were found in this file.'}
@@ -69,19 +71,19 @@ export default function Overview() {
 
       <Warnings items={data.warnings} />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div data-stagger className="cells grid-cols-2 md:grid-cols-4">
         <Stat label="Total flows" value={k.total_flows} />
         <Stat label="Threats" value={k.threats} tone={threats ? 'text-red-soft' : 'text-text'} />
         <Stat label="Threat share" value={k.threat_pct} format={(v) => `${v.toFixed(1)}%`} />
         <Stat label="Needs review" value={k.needs_review} tone={k.needs_review ? 'text-amber' : 'text-text'} />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-5">
+      <div data-stagger className="mt-6 grid gap-6 lg:grid-cols-5">
         <Panel title="Risk breakdown" note="Every analysed flow, by risk level." className="lg:col-span-2">
           <div className="relative">
             <EChart option={donut} height={220} label="Donut chart of flows by risk level" />
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="num text-2xl font-semibold"><CountUp value={k.total_flows} /></span>
+              <span className="font-display text-5xl font-bold"><CountUp value={k.total_flows} /></span>
               <span className="text-xs text-muted">flows</span>
             </div>
           </div>

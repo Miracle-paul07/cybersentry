@@ -26,7 +26,7 @@ const CHIPS = [
   { label: 'Needs review', risk: '', review: 'yes' },
 ]
 
-const selectClass = 'rounded-lg border border-line bg-panel px-3 py-2 text-sm focus:border-cyan focus:outline-none'
+const selectClass = 'border border-line bg-panel px-3 py-2 text-sm focus:border-cyan focus:outline-none'
 
 export default function Detection() {
   const { jobId } = useJob()
@@ -79,7 +79,7 @@ export default function Detection() {
     }
   }, [jobId, queryKey])
 
-  if (error) return <div className="mx-auto max-w-6xl px-4 py-12"><ErrorNote>{error}</ErrorNote></div>
+  if (error) return <div className="mx-auto max-w-[1560px] px-6 py-12"><ErrorNote>{error}</ErrorNote></div>
   if (!data) return <Loading />
 
   const f = data.flows
@@ -88,12 +88,12 @@ export default function Detection() {
   const riskOptions = ['Medium', 'High', 'Critical']
 
   return (
-    <Reveal as="section" className="mx-auto max-w-6xl px-4 py-10">
+    <Reveal as="section" className="mx-auto max-w-[1560px] px-6 py-10">
       <PageHeader eyebrow={`Threat detection · ${data.filename}`} title="Flagged flows">
         <a
           href={urls.flowsCsv(jobId, filters)}
           download
-          className="rounded-full border border-cyan/60 bg-cyan/10 px-5 py-2 text-sm font-semibold text-cyan transition hover:bg-cyan/20"
+          className="btn"
         >
           Export CSV
         </a>
@@ -108,7 +108,7 @@ export default function Detection() {
               type="button"
               aria-pressed={active}
               onClick={() => update({ risk: c.risk, review: c.review, attack_type: '', scope: '' })}
-              className={`rounded-full border px-3 py-1 text-sm transition ${
+              className={`num border px-3 py-1.5 text-[11px] tracking-[0.12em] uppercase transition ${
                 active ? 'border-cyan bg-cyan/15 text-cyan' : 'border-line text-muted hover:text-text'
               }`}
             >
@@ -155,7 +155,7 @@ export default function Detection() {
         </label>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4">
+      <div data-stagger className="cells mt-4 grid-cols-2">
         <Stat label="Matching flows" value={f.total} />
         <Stat label="Of those, needing review" value={f.needs_review} tone={f.needs_review ? 'text-amber' : 'text-text'} />
       </div>
@@ -167,7 +167,7 @@ export default function Detection() {
         </p>
       )}
 
-      <div className="panel mt-4 overflow-x-auto rounded-xl">
+      <div className="panel mt-4 overflow-x-auto ">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs tracking-wider text-muted uppercase">
@@ -229,7 +229,7 @@ export default function Detection() {
             ))}
             {f.rows.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length} className="px-4 py-10 text-center text-muted">
+                <td colSpan={COLUMNS.length} className="px-6 py-10 text-center text-muted">
                   No flows match these filters.
                 </td>
               </tr>
@@ -258,7 +258,7 @@ function PageButton({ children, ...props }) {
   return (
     <button
       type="button"
-      className="rounded-lg border border-line px-3 py-1.5 hover:text-text disabled:opacity-40 disabled:hover:text-muted"
+      className="border border-line px-3 py-1.5 hover:text-text disabled:opacity-40 disabled:hover:text-muted"
       {...props}
     >
       {children}

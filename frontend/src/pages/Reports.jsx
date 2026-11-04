@@ -18,7 +18,7 @@ export default function Reports() {
 
   if (reports.length === 0) {
     return (
-      <section className="mx-auto max-w-6xl px-4 py-10">
+      <section className="mx-auto max-w-[1560px] px-6 py-10">
         <PageHeader eyebrow="Incident reports" title="Open incidents" />
         <EmptyState title="No incidents">No attacks were detected, so there are no incident reports.</EmptyState>
       </section>
@@ -30,7 +30,7 @@ export default function Reports() {
   const selected = reports.find((r) => r.attack_type === type)
 
   return (
-    <Reveal as="section" className="mx-auto max-w-6xl px-4 py-10">
+    <Reveal as="section" className="mx-auto max-w-[1560px] px-6 py-10">
       <PageHeader eyebrow="Incident reports" title="Open incidents" />
       <p className="-mt-3 mb-4 text-sm text-muted">
         Reports are AI-assisted evidence summaries and require human review.
@@ -49,12 +49,12 @@ export default function Reports() {
                 replace
                 aria-current={active ? 'page' : undefined}
                 data-threat={r.severity === 'Critical' || undefined}
-                className={`block rounded-lg border px-3 py-2 text-sm transition ${
+                className={`block border px-3 py-2 text-sm transition ${
                   active ? 'border-cyan bg-cyan/10' : 'border-line bg-panel hover:border-cyan/50'
                 }`}
               >
                 <span className="flex items-center justify-between gap-2">
-                  <span className="font-medium">{r.attack_type}</span>
+                  <span className="font-display text-xl leading-none font-bold uppercase">{r.attack_type}</span>
                   <RiskBadge level={r.severity} />
                 </span>
                 <ReportState report={r} className="mt-1" />
@@ -81,12 +81,12 @@ function Downloads({ jobId, type }) {
   return (
     <div className="flex gap-2">
       <Magnetic strength={0.2}>
-        <a href={urls.reportFile(jobId, type, 'pdf')} download className="inline-block rounded-full border border-cyan/60 bg-cyan/10 px-4 py-2 text-sm font-semibold text-cyan transition hover:bg-cyan/20">
+        <a href={urls.reportFile(jobId, type, 'pdf')} download className="btn">
           Download PDF
         </a>
       </Magnetic>
       <Magnetic strength={0.2}>
-        <a href={urls.reportFile(jobId, type, 'txt')} download className="inline-block rounded-full border border-line px-4 py-2 text-sm transition hover:border-cyan/50">
+        <a href={urls.reportFile(jobId, type, 'txt')} download className="btn btn-ghost">
           Download TXT
         </a>
       </Magnetic>
@@ -104,7 +104,7 @@ function Waiting({ report }) {
   }[report.status]
 
   return (
-    <article className="panel min-w-0 overflow-hidden rounded-xl">
+    <article className="panel min-w-0 overflow-hidden ">
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3" style={{ background: `${color}26`, borderBottom: `2px solid ${color}` }}>
         <p className="flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
           <span className="h-2 w-2 rounded-full" style={{ background: color }} />
@@ -115,14 +115,14 @@ function Waiting({ report }) {
       <div className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold">{report.attack_type}</h2>
+            <h2 className="font-display text-5xl leading-none font-bold uppercase">{report.attack_type}</h2>
             <p className="mt-1 text-sm text-muted">{fmt(report.flows)} flows detected</p>
           </div>
           <div className="flex gap-2">
-            <button type="button" disabled className="cursor-not-allowed rounded-full border border-line px-4 py-2 text-sm text-muted opacity-60">
+            <button type="button" disabled className="btn btn-ghost cursor-not-allowed opacity-50">
               Download PDF
             </button>
-            <button type="button" disabled className="cursor-not-allowed rounded-full border border-line px-4 py-2 text-sm text-muted opacity-60">
+            <button type="button" disabled className="btn btn-ghost cursor-not-allowed opacity-50">
               Download TXT
             </button>
           </div>
@@ -149,7 +149,7 @@ function Ticket({ jobId, type, failed }) {
   const isLlm = !source.startsWith('template')
 
   return (
-    <article className="panel min-w-0 overflow-hidden rounded-xl">
+    <article className="panel min-w-0 overflow-hidden ">
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3" style={{ background: `${color}26`, borderBottom: `2px solid ${color}` }}>
         <p className="flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
           <span className={`h-2 w-2 rounded-full ${severity === 'Critical' ? 'animate-pulse' : ''}`} style={{ background: color }} />
@@ -161,7 +161,7 @@ function Ticket({ jobId, type, failed }) {
       <div className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold">{n.title}</h2>
+            <h2 className="font-display text-5xl leading-none font-bold uppercase">{n.title}</h2>
             <p className="num mt-1 text-xs text-muted">Generated {e.generated_at}</p>
           </div>
           <Downloads jobId={jobId} type={type} />
@@ -176,7 +176,7 @@ function Ticket({ jobId, type, failed }) {
         <div className="mt-3 flex flex-wrap gap-2">
           {e.mitre_attack.length ? (
             e.mitre_attack.map((m) => (
-              <span key={m} className="num rounded border border-line bg-panel-2 px-2 py-0.5 text-xs">
+              <span key={m} className="num border border-line bg-panel-2 px-2 py-0.5 text-xs">
                 MITRE ATT&CK {m}
               </span>
             ))
@@ -185,7 +185,7 @@ function Ticket({ jobId, type, failed }) {
           )}
         </div>
 
-        <dl className="mt-6 grid grid-cols-2 gap-4 rounded-lg border border-line bg-panel-2 p-4 md:grid-cols-4">
+        <dl className="mt-6 grid grid-cols-2 gap-4 border border-line bg-panel-2 p-4 md:grid-cols-4">
           <Fact label="Flows detected" value={fmt(e.flows_detected)} />
           <Fact label="Share of traffic" value={`${e.share_of_analysed_traffic_pct}%`} />
           <Fact label="Confidence" value={`${e.mean_confidence_pct}% mean, ${e.min_confidence_pct}% min`} />

@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #05070f;
-  --color-panel: #0b1020;
-  --color-panel-2: #10172b;
-  --color-line: #1c2540;
+  --color-ink: #04060b;
+  --color-panel: #090d18;
+  --color-panel-2: #0e1424;
+  --color-line: #1a2236;
   --color-text: #e6ebff;
   --color-muted: #8a94b3;
 
@@ -16,7 +16,7 @@
   --color-red-soft: #fb7185; /* red text on dark panels */
 
   --font-sans: "Inter Variable", system-ui, "Segoe UI", sans-serif;
-  --font-display: "Unbounded", "Inter Variable", system-ui, sans-serif;
+  --font-display: "Big Shoulders Display Variable", "Arial Narrow", Impact, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, Consolas, monospace;
 }
 
@@ -58,13 +58,12 @@ body {
 .app-bg::before {
   content: "";
   position: absolute;
-  inset: -40px;
+  inset: 0;
   background-image:
-    linear-gradient(to right, rgb(34 211 238 / 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(34 211 238 / 0.045) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse at 50% 30%, black 20%, transparent 80%);
-  animation: grid-drift 24s linear infinite;
+    linear-gradient(to right, rgb(138 148 179 / 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(138 148 179 / 0.055) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: linear-gradient(to bottom, black, transparent 90%);
 }
 
 .app-bg::after {
@@ -75,22 +74,78 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-@keyframes grid-drift {
-  to {
-    transform: translate3d(40px, 40px, 0);
-  }
-}
-
 /* Glass for cards; tables and reports use the solid .panel for readability */
 .glass {
-  background: rgb(11 16 32 / 0.72);
+  background: rgb(9 13 24 / 0.9); /* no backdrop blur: it is redrawn every frame over the moving background */
   border: 1px solid rgb(34 211 238 / 0.14);
-  backdrop-filter: blur(10px);
 }
 
 .panel {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
+}
+
+/* Corner marks on a box */
+.ticks {
+  position: relative;
+}
+
+.ticks::before {
+  --tick: rgb(34 211 238 / 0.75);
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--tick), var(--tick)) 0 0 / 10px 1px,
+    linear-gradient(var(--tick), var(--tick)) 0 0 / 1px 10px,
+    linear-gradient(var(--tick), var(--tick)) 100% 0 / 10px 1px,
+    linear-gradient(var(--tick), var(--tick)) 100% 0 / 1px 10px,
+    linear-gradient(var(--tick), var(--tick)) 0 100% / 10px 1px,
+    linear-gradient(var(--tick), var(--tick)) 0 100% / 1px 10px,
+    linear-gradient(var(--tick), var(--tick)) 100% 100% / 10px 1px,
+    linear-gradient(var(--tick), var(--tick)) 100% 100% / 1px 10px;
+  background-repeat: no-repeat;
+}
+
+/* Stat boxes joined into one table-like block. Outlines rather than a coloured gap, so
+   nothing bright shows through while a cell fades in. */
+.cells {
+  display: grid;
+  gap: 1px;
+  padding: 1px;
+}
+
+.cell {
+  position: relative;
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow: hidden;
+  background: var(--color-panel);
+  outline: 1px solid var(--color-line);
+  transition: background-color 0.3s;
+}
+
+.cell::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: var(--color-cyan);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cell[data-threat]::after {
+  background: var(--color-red);
+}
+
+.cell:hover {
+  background: var(--color-panel-2);
+}
+
+.cell:hover::after {
+  transform: none;
 }
 
 /* Soft highlight that follows the pointer on tilt cards (--mx / --my set in JS) */
@@ -112,6 +167,355 @@ body {
 
 .tilt:hover::after {
   opacity: 1;
+}
+
+/* Corner brackets that close in on a card when it is hovered */
+.tilt::before {
+  --tick: rgb(34 211 238 / 0.9);
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: inset 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
+  background:
+    linear-gradient(var(--tick), var(--tick)) 0 0 / 12px 1px,
+    linear-gradient(var(--tick), var(--tick)) 0 0 / 1px 12px,
+    linear-gradient(var(--tick), var(--tick)) 100% 0 / 12px 1px,
+    linear-gradient(var(--tick), var(--tick)) 100% 0 / 1px 12px,
+    linear-gradient(var(--tick), var(--tick)) 0 100% / 12px 1px,
+    linear-gradient(var(--tick), var(--tick)) 0 100% / 1px 12px,
+    linear-gradient(var(--tick), var(--tick)) 100% 100% / 12px 1px,
+    linear-gradient(var(--tick), var(--tick)) 100% 100% / 1px 12px;
+  background-repeat: no-repeat;
+}
+
+.tilt:hover::before {
+  inset: 0;
+  opacity: 1;
+}
+
+/* Scroll-in reveal, see Reveal in fx.jsx */
+.rv {
+  opacity: 0;
+  translate: 0 26px;
+}
+
+.rv[data-in] {
+  opacity: 1;
+  translate: none;
+  transition:
+    opacity 0.7s ease-out calc(var(--rv-i, 0) * 70ms + 80ms),
+    translate 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--rv-i, 0) * 70ms + 80ms);
+}
+
+/* Page titles rise out from behind a mask, and a hairline draws under them */
+.rise {
+  animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(110%);
+  }
+}
+
+.page-header::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-cyan), var(--color-line) 30%);
+  transform-origin: left;
+  animation: draw-line 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+@keyframes draw-line {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Buttons are square and mono, and fill from the left when hovered */
+.btn {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 0.7rem 1.25rem;
+  border: 1px solid var(--color-cyan);
+  color: var(--color-cyan);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-cyan);
+  transform: translateX(-101%);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn:not(:disabled):hover,
+.btn:focus-visible {
+  color: var(--color-ink);
+}
+
+.btn:not(:disabled):hover::before,
+.btn:focus-visible::before {
+  transform: none;
+}
+
+.btn-ghost {
+  border-color: var(--color-line);
+  color: var(--color-text);
+}
+
+.btn-ghost::before {
+  background: var(--color-text);
+}
+
+/* Page wipe and intro, see Shutter.jsx. Just under the reticle, above chart tooltips. */
+.shutter {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.shutter-cols {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.shutter-col {
+  flex: 1;
+  margin-left: -1px; /* no hairline gaps between columns */
+  background: var(--color-ink);
+  border-top: 1px solid var(--color-cyan);
+  border-bottom: 1px solid var(--color-cyan);
+  border-right: 1px solid rgb(34 211 238 / 0.07);
+  will-change: transform;
+}
+
+.shutter-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  opacity: 0;
+}
+
+.shutter-index {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: var(--color-cyan);
+  white-space: pre;
+}
+
+.shutter-mask {
+  overflow: hidden;
+}
+
+.shutter-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 13vw, 13rem);
+  font-weight: 800;
+  line-height: 0.9;
+  color: var(--color-text);
+  text-transform: uppercase;
+}
+
+.intro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--color-cyan);
+}
+
+.intro-mark {
+  width: 64px;
+  height: 64px;
+  overflow: visible;
+}
+
+.intro-word {
+  display: flex;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 15vw, 15rem);
+  font-weight: 800;
+  line-height: 0.9;
+  color: var(--color-text);
+  text-transform: uppercase;
+}
+
+.intro-tag {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.32em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  white-space: pre;
+}
+
+/* Landing page */
+.hero-line {
+  text-shadow: 0 0 28px var(--color-ink), 0 0 10px var(--color-ink); /* stays readable over the planet */
+}
+
+.planet {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  animation: fade-in 1.6s ease-out both;
+}
+
+.planet canvas {
+  image-rendering: pixelated;
+}
+
+/* Thin dark lines turn the planet's big pixels into separate dots. Same size as CELL in Planet.jsx */
+.planet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, var(--color-ink) 1px, transparent 1px) 0 0 / 4px 4px,
+    linear-gradient(to bottom, var(--color-ink) 1px, transparent 1px) 0 0 / 4px 4px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.marquee {
+  display: flex;
+  overflow: hidden;
+  border-block: 1px solid var(--color-line);
+  background: var(--color-ink);
+}
+
+.marquee-track {
+  display: flex;
+  flex-shrink: 0;
+  animation: marquee 34s linear infinite;
+}
+
+.marquee-word {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 0.75rem 0 0.75rem 2.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 8vw, 7.5rem);
+  font-weight: 800;
+  line-height: 1;
+  color: transparent;
+  text-transform: uppercase;
+  -webkit-text-stroke: 1px rgb(138 148 179 / 0.55);
+}
+
+.marquee-mark {
+  color: var(--color-cyan);
+  font-size: 0.5em;
+  -webkit-text-stroke: 0;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.scroll-cue {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 1px;
+  overflow: hidden;
+  background: var(--color-line);
+}
+
+.scroll-cue::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-cyan);
+  animation: scroll-cue 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes scroll-cue {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.final-cta {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--color-cyan);
+  transition: color 0.35s;
+}
+
+.final-cta:hover,
+.final-cta:focus-visible {
+  color: var(--color-cyan);
+}
+
+/* The thread that draws down the pipeline section as you scroll */
+.pipe-node {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  border: 1px solid var(--color-muted);
+  border-radius: 9999px;
+  background: var(--color-ink);
+  transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+}
+
+[data-lit] > .pipe-node {
+  border-color: var(--color-cyan);
+  background: var(--color-cyan);
+  box-shadow: 0 0 18px 2px rgb(34 211 238 / 0.7);
+}
+
+.pipe-index {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-line);
+  transition: color 0.4s, -webkit-text-stroke-color 0.4s;
+}
+
+[data-lit] .pipe-index {
+  color: rgb(34 211 238 / 0.14);
+  -webkit-text-stroke-color: var(--color-cyan);
 }
 
 /* Targeting reticle. The has-reticle class is only added for a mouse without reduced
@@ -163,13 +567,22 @@ html.has-reticle select {
   width: 44px;
   height: 44px;
   overflow: visible;
-  /* The dark edge keeps a red reticle visible over red chart marks */
-  filter: drop-shadow(0 0 1px var(--color-ink)) drop-shadow(0 0 1px var(--color-ink)) drop-shadow(0 0 4px currentColor);
+  will-change: transform;
   transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.3, 1);
 }
 
 .reticle-ring * {
   vector-effect: non-scaling-stroke;
+}
+
+.reticle-edge {
+  stroke: var(--color-ink);
+  stroke-width: 3;
+}
+
+.reticle-glow {
+  stroke-width: 5;
+  opacity: 0.18;
 }
 
 .reticle[data-active] .reticle-ring {
@@ -225,7 +638,8 @@ html.has-reticle select {
 
 /* Hero */
 .dropzone {
-  border: 1.5px dashed rgb(34 211 238 / 0.4);
+  background: rgb(4 6 11 / 0.82);
+  border: 1px solid rgb(34 211 238 / 0.35);
   transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s;
 }
 
